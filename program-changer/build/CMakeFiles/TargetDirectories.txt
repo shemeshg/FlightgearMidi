@@ -1,3 +1,0 @@
-/Volumes/RAM_Disk_8G/program-changer/build/CMakeFiles/program-changer.dir
-/Volumes/RAM_Disk_8G/program-changer/build/CMakeFiles/edit_cache.dir
-/Volumes/RAM_Disk_8G/program-changer/build/CMakeFiles/rebuild_cache.dir
