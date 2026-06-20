@@ -11,7 +11,8 @@ if(GEN_HPP)
 
     set(HPP_GEN_FILES
         ${CMAKE_SOURCE_DIR}/scripts/hppTemplates.txt
-        ${CMAKE_CURRENT_SOURCE_DIR}/hpp/TelnetClient.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/hpp/MidiClient.hpp
+${CMAKE_CURRENT_SOURCE_DIR}/hpp/TelnetClient.hpp
     )
     add_custom_target(runScript_b64fa7459a21b0f2b87477be85ed5180eac925e48113d35950b36e2777daa950 ALL
         COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/parseHpp.py ${HPP_GEN_FILES}
@@ -42,6 +43,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(libremidi)
 add_library(MyLib STATIC    
+    ${CMAKE_CURRENT_BINARY_DIR}/hpp/MidiClient.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/hpp/MidiClient.h
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/TelnetClient.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/TelnetClient.h
     )

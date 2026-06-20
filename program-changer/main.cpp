@@ -1,10 +1,11 @@
 #include "TelnetClient.h"
+#include "MidiClient.h"
 #include <iostream>
 
 
 int main(int argc, char* argv[]) {
 
-
+    printShalom();
     std::string host = "localhost";
     std::string port = "5500";
 
