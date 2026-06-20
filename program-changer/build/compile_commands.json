@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/Volumes/RAM_Disk_8G/program-changer/build",
+  "command": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++   -g -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk -o CMakeFiles/program-changer.dir/main.cpp.o -c /Volumes/RAM_Disk_8G/program-changer/main.cpp",
+  "file": "/Volumes/RAM_Disk_8G/program-changer/main.cpp",
+  "output": "CMakeFiles/program-changer.dir/main.cpp.o"
+}
+]
