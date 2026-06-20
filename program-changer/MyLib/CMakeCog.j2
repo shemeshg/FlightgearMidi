@@ -1,11 +1,25 @@
 {{HPP_SCMAKE_SCRIPT}}
 
+include(FetchContent)
+{% for comp in FETCH_CONTENT -%}
+FetchContent_Declare(
+    {{comp.LIB}}
+    GIT_REPOSITORY {{comp.GIT_REPOSITORY}}
+    GIT_TAG        {{comp.GIT_TAG}}
+)
+FetchContent_MakeAvailable({{comp.LIB}})
+{% endfor -%}
+
 add_library({{BIN_NAME}} STATIC    
     {% for comp in HPP_CPP_FILES -%}
         {{ comp }}
     {% endfor -%}
 )
 set_target_properties({{BIN_NAME}} PROPERTIES LINKER_LANGUAGE CXX)
+
+{% for comp in FETCH_CONTENT -%}
+target_link_libraries({{BIN_NAME}} PRIVATE {{comp.LIB}})
+{% endfor -%}
 
 {% for comp in HPP_INCLUDE_PUBLIC_DIR -%}
     target_include_directories({{BIN_NAME}} PUBLIC {{ comp }})

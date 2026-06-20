@@ -7,7 +7,12 @@ from GenHpp import GenHpp
 
 template_dict = {
            "APP_VER": "0.1.0",
-           "BIN_NAME": "MyLib"
+           "BIN_NAME": "MyLib",
+           "FETCH_CONTENT" : [{
+                "LIB":  "libremidi",
+                "GIT_REPOSITORY" : "https://github.com/celtera/libremidi" ,
+                "GIT_TAG" : "master"
+           }]
            }
 
 hppFolders = ["hpp"]
