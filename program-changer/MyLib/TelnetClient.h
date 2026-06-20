@@ -11,89 +11,6 @@
 #include <netdb.h>
 
 class TelnetClient {
-private:
-    int sock_fd = -1;
-    
-
-    std::thread receiver_thread;
-    std::atomic<bool> is_running{false};
-
-    // Synchronization variables
-    std::mutex data_mutex;
-    std::condition_variable data_cv;
-    std::string latest_response;
-    std::string accumulated_line;
-    bool response_ready = false;
-    bool expecting_data = false;
-
-    // Background thread loop
-    void readServer() {
-        char buffer;
-
-        while (is_running) {
-            // Read exactly 1 byte. This blocks until FlightGear sends *anything*
-            ssize_t bytes = recv(sock_fd, &buffer, 1, 0);
-            
-            if (bytes <= 0) {
-                std::cerr << "\n[DEBUG] Socket error or closed. Bytes: " << bytes << "\n";                
-                is_running = false;
-                break; 
-            }
-
-            // 1. Force absolute instant terminal echoing (Bypasses stream lockups)
-            //std::cout << buffer;
-            //std::cout.flush();
-
-            {
-                std::lock_guard<std::mutex> lock(data_mutex);
-                if (expecting_data) {
-                    accumulated_line += buffer;
-
-                    // CHECK Condition A: FlightGear is in data mode and returned a clean line
-                    bool found_newline = (accumulated_line.find('\n') != std::string::npos);
-                    
-
-                    if (found_newline ) {
-                        
-                        // Clean up and strip verbose properties/prompts from the value string
-                        while (!accumulated_line.empty() && 
-                            (accumulated_line.back() == '\n' || 
-                            accumulated_line.back() == '\r' )) {
-                            accumulated_line.pop_back();
-                        }
-                                                
-                        latest_response = accumulated_line;
-    
-                        response_ready = true;
-                        expecting_data = false; 
-                        accumulated_line.clear();
-                        
-                        data_cv.notify_one(); 
-                    }
-                }
-            }
-        }
-        is_running = false;
-    }
-
-
-    void start() {
-        if (is_running) return; 
-        is_running = true;
-        receiver_thread = std::thread(&TelnetClient::readServer, this);
-
-        // FIX: Wait a moment for FlightGear's initial welcoming burst to finish arriving
-        std::cerr << "[INIT] Waiting for FlightGear login/telnet negotiation bytes...\n";
-        std::this_thread::sleep_for(std::chrono::milliseconds(400));
-
-        // Put FlightGear into data mode safely now that the stream is quiet
-        std::cerr << "[INIT] Sending 'data\\r\\n' mode command to FlightGear...\n";
-        std::string mode_cmd = "data\r\n";
-        send(sock_fd, mode_cmd.c_str(), mode_cmd.length(), 0);
-
-        // Give FlightGear a brief window to process the transition internally
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    }
 
 public:
     bool isRunning() const{
@@ -179,4 +96,90 @@ public:
             receiver_thread.join();
         }
     }
+        
+private:
+    int sock_fd = -1;
+    
+
+    std::thread receiver_thread;
+    std::atomic<bool> is_running{false};
+
+    // Synchronization variables
+    std::mutex data_mutex;
+    std::condition_variable data_cv;
+    std::string latest_response;
+    std::string accumulated_line;
+    bool response_ready = false;
+    bool expecting_data = false;
+
+    // Background thread loop
+    void readServer() {
+        char buffer;
+
+        while (is_running) {
+            // Read exactly 1 byte. This blocks until FlightGear sends *anything*
+            ssize_t bytes = recv(sock_fd, &buffer, 1, 0);
+            
+            if (bytes <= 0) {
+                std::cerr << "\n[DEBUG] Socket error or closed. Bytes: " << bytes << "\n";                
+                is_running = false;
+                break; 
+            }
+
+            // 1. Force absolute instant terminal echoing (Bypasses stream lockups)
+            //std::cout << buffer;
+            //std::cout.flush();
+
+            {
+                std::lock_guard<std::mutex> lock(data_mutex);
+                if (expecting_data) {
+                    accumulated_line += buffer;
+
+                    // CHECK Condition A: FlightGear is in data mode and returned a clean line
+                    bool found_newline = (accumulated_line.find('\n') != std::string::npos);
+                    
+
+                    if (found_newline ) {
+                        
+                        // Clean up and strip verbose properties/prompts from the value string
+                        while (!accumulated_line.empty() && 
+                            (accumulated_line.back() == '\n' || 
+                            accumulated_line.back() == '\r' )) {
+                            accumulated_line.pop_back();
+                        }
+                                                
+                        latest_response = accumulated_line;
+    
+                        response_ready = true;
+                        expecting_data = false; 
+                        accumulated_line.clear();
+                        
+                        data_cv.notify_one(); 
+                    }
+                }
+            }
+        }
+        is_running = false;
+    }
+
+
+    void start() {
+        if (is_running) return; 
+        is_running = true;
+        receiver_thread = std::thread(&TelnetClient::readServer, this);
+
+        // FIX: Wait a moment for FlightGear's initial welcoming burst to finish arriving
+        std::cerr << "[INIT] Waiting for FlightGear login/telnet negotiation bytes...\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds(400));
+
+        // Put FlightGear into data mode safely now that the stream is quiet
+        std::cerr << "[INIT] Sending 'data\\r\\n' mode command to FlightGear...\n";
+        std::string mode_cmd = "data\r\n";
+        send(sock_fd, mode_cmd.c_str(), mode_cmd.length(), 0);
+
+        // Give FlightGear a brief window to process the transition internally
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
+
+
 };

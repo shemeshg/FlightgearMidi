@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 3.10.0)
-project(program-changer VERSION {{APP_VER}} LANGUAGES C CXX)
+project({{PROGRAM_NAME}} VERSION {{APP_VER}} LANGUAGES C CXX)
 
-add_subdirectory(MyLib)
+{% for comp in add_subdirectory_lib -%}
+    add_subdirectory({{ comp }})
+{% endfor -%}
 
-add_executable(program-changer main.cpp)
-target_link_libraries(program-changer PRIVATE MyLib)
+add_executable({{PROGRAM_NAME}} main.cpp)
+
+{% for comp in add_subdirectory_lib_target -%}
+    target_link_libraries({{PROGRAM_NAME}} PRIVATE {{ comp }})    
+{% endfor -%}

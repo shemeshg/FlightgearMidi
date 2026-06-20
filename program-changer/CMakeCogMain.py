@@ -2,10 +2,12 @@ from jinja2 import Environment, FileSystemLoader
 import os
 
 template_dict = {
-           "APP_VER": "0.1.0"
+           "APP_VER": "0.1.0",
+           "PROGRAM_NAME": "program-changer",
+           "add_subdirectory_lib": ["MyLib"]
            }
 
-
+template_dict["add_subdirectory_lib_target"] = [os.path.basename(path) for path in template_dict["add_subdirectory_lib"]]
 
 environment = Environment(loader=FileSystemLoader("."))
 template = environment.get_template("CMakeCogMain.j2")
