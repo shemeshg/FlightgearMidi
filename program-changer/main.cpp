@@ -15,7 +15,7 @@ private:
     
 
     std::thread receiver_thread;
-    bool is_running = false;
+    std::atomic<bool> is_running{false};
 
     // Synchronization variables
     std::mutex data_mutex;
@@ -76,6 +76,24 @@ private:
     }
 
 
+    void start() {
+        if (is_running) return; 
+        is_running = true;
+        receiver_thread = std::thread(&TelnetClient::readServer, this);
+
+        // FIX: Wait a moment for FlightGear's initial welcoming burst to finish arriving
+        std::cerr << "[INIT] Waiting for FlightGear login/telnet negotiation bytes...\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds(400));
+
+        // Put FlightGear into data mode safely now that the stream is quiet
+        std::cerr << "[INIT] Sending 'data\\r\\n' mode command to FlightGear...\n";
+        std::string mode_cmd = "data\r\n";
+        send(sock_fd, mode_cmd.c_str(), mode_cmd.length(), 0);
+
+        // Give FlightGear a brief window to process the transition internally
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
+
 public:
     bool isRunning() const{
         return is_running;
@@ -86,6 +104,7 @@ public:
     }
 
     bool openSocket(const std::string &host, const std::string port ){
+        stop();
         struct addrinfo hints{}, *res;
         hints.ai_family = AF_INET; 
         hints.ai_socktype = SOCK_STREAM;
@@ -109,27 +128,12 @@ public:
             return false;
         }
         freeaddrinfo(res);
-        std::cout << "[Connected to " << host << ":" << port << "]\n";           
+        std::cout << "[Connected to " << host << ":" << port << "]\n";    
+        start();       
         return true;
     }
 
-    void start() {
-        if (is_running) return; 
-        is_running = true;
-        receiver_thread = std::thread(&TelnetClient::readServer, this);
 
-        // FIX: Wait a moment for FlightGear's initial welcoming burst to finish arriving
-        std::cerr << "[INIT] Waiting for FlightGear login/telnet negotiation bytes...\n";
-        std::this_thread::sleep_for(std::chrono::milliseconds(400));
-
-        // Put FlightGear into data mode safely now that the stream is quiet
-        std::cerr << "[INIT] Sending 'data\\r\\n' mode command to FlightGear...\n";
-        std::string mode_cmd = "data\r\n";
-        send(sock_fd, mode_cmd.c_str(), mode_cmd.length(), 0);
-
-        // Give FlightGear a brief window to process the transition internally
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    }
 
 
     // Sends a property read request and blocks with a built-in safety timeout
@@ -159,7 +163,7 @@ public:
     }
 
     // Sets a property value (Note: 'set' requests do not trigger back-and-forth replies)
-    void setValue(const std::string& path, const std::string& val) {
+    void setValue(const std::string& path, const std::string& val) {        
         std::string cmd = "set " + path + " " + val + "\r\n";
         send(sock_fd, cmd.c_str(), cmd.length(), 0);
     }
@@ -177,13 +181,10 @@ public:
 };
 
 int main(int argc, char* argv[]) {
-    if (argc < 3) {
-        std::cerr << "Usage: " << argv[0] << " <hostname/IP> <port>\n";
-        return 1;
-    }
 
-    std::string host = argv[1];
-    std::string port = argv[2];
+
+    std::string host = "localhost";
+    std::string port = "5500";
 
 
 
@@ -193,42 +194,25 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    client.start();
-
     // Give FlightGear a brief window to parse and transition to data mode internally
     std::this_thread::sleep_for(std::chrono::milliseconds(250));
 
-    std::cout << "\n--- Controls Configured ---\n";
-    std::cout << "Usage Examples:\n";
-    std::cout << "  g /controls/engines/engine[0]/throttle\n";
-    std::cout << "  s /controls/engines/engine[0]/throttle 0.75\n\n";
+    /*
+    for (float i=0;i<=100;i++){
+        std::cout << "\n[get RESULT] "<< std::to_string(0.01* i)<< " " << client.getValue("/controls/engines/engine[0]/throttle") << "\n\n";
+    }
+    */
+    
+    for (float i=0;i<=100;i++){
+        client.setValue("/controls/engines/engine[0]/throttle",std::to_string(0.01* i) );
+        std::cout << "\n[set RESULT] " << std::to_string(0.01* i) << "\n\n";
+    }
+    
 
     std::string userInput;
-    while (std::getline(std::cin, userInput) && client.isRunning()) {
-        if (userInput.empty()) continue;
 
-        if (userInput.rfind("g ", 0) == 0) {
-            std::string path = userInput.substr(2);
-            std::string result = client.getValue(path);
-            std::cout << "\n[FINAL RESULT] " << path << " -> " << result << "\n\n";
-        } 
-        else if (userInput.rfind("s ", 0) == 0) {
-            std::string remaining = userInput.substr(2);
-            size_t space_pos = remaining.find(' ');
-            if (space_pos != std::string::npos) {
-                std::string path = remaining.substr(0, space_pos);
-                std::string val = remaining.substr(space_pos + 1);
-                client.setValue(path, val);
-            } else {
-                std::cout << "[ERROR] Format must match: s <path> <value>\n";
-            }
-        }
-        else {
-            // Default raw fallback channel
-            //userInput += "\r\n";
-            //send(sock, userInput.c_str(), userInput.length(), 0);
-        }
-    }
+    std::getline(std::cin, userInput); 
+
 
     client.stop();
     return 0;
