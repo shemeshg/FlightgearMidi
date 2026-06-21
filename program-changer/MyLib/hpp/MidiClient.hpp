@@ -11,19 +11,38 @@
 //-only-file header
 //-var {PRE} ""
 
+
+
 //- {fn}
-void printShalom()
+void testMidi()
 //-only-file body
 {
     std::cout << "\ninputs:\n";
     libremidi::observer obs;
     for (const libremidi::input_port &port : obs.get_input_ports())
     {
-        std::cout << port.port_name << "\n";
+        std::cout << port.display_name << "\n";
     }
     std::cout << "\noutputs:\n";
     for (const libremidi::output_port &port : obs.get_output_ports())
     {
-        std::cout << port.port_name << "\n";
+        std::cout << port.display_name << "\n";
     }
+    auto my_callback = [](const libremidi::message& message) {
+      // how many bytes
+      //message.size();
+      // access to the individual bytes
+      //message[i];
+      // access to the timestamp
+      std::cerr<< message.bytes.size()<<"\n";
+      std::cerr<< message.timestamp<<"\n";
+      
+    };
+
+   libremidi::midi_in midi { 
+      libremidi::input_configuration{ .on_message = my_callback } 
+    };
+    midi.open_port(obs.get_input_ports()[1]);
+    std::string userInput;
+    std::getline(std::cin, userInput);
 }
