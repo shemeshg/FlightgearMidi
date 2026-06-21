@@ -7,14 +7,16 @@
 
 //-only-file header //-
 #pragma once
+//- {include-header}
+#include "MidiClientItf.hpp" //- #include "MidiClientItf.h"
 
 //-only-file header
-//-var {PRE} ""
-
-
+//-var {PRE} "MidiClient::"
+class MidiClient: public MidiClientItf {
+public:
 
 //- {fn}
-void testMidi()
+void testMidi() override
 //-only-file body
 {
     std::cout << "\ninputs:\n";
@@ -46,3 +48,8 @@ void testMidi()
     std::string userInput;
     std::getline(std::cin, userInput);
 }
+
+//-only-file header
+private:
+
+};

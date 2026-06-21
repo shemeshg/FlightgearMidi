@@ -1,5 +1,5 @@
 #include "TelnetClient.h"
-#include "MidiClient.h"
+#include "MidiClientUtil.h"
 #include <iostream>
 
 int testTelnet()
@@ -42,7 +42,8 @@ int testTelnet()
 int main(int argc, char *argv[])
 {
 
-    testMidi();
+    auto midiItf = getMidiClientItf();
+    midiItf->testMidi();
 
 
     return 0;
