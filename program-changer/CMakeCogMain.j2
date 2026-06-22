@@ -8,6 +8,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 {% for comp in add_subdirectory_lib -%}
     add_subdirectory({{ comp }})
 {% endfor -%}
+{% for comp in add_subdirectory_header_only -%}
+    add_subdirectory({{ comp }})
+{% endfor -%}
+
 
 add_executable({{PROGRAM_NAME}} main.cpp)
 
