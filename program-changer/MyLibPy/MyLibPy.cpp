@@ -8,10 +8,9 @@ int add(int i, int j) {
 }
 
 PYBIND11_MODULE(MyLibPy, m) {
-    py::gil_scoped_release release;
-
     m.doc() = "pybind11 MyLibPy plugin";
 
-    m.def("add", &add, "A function that adds two numbers");
+    m.def("add", &add,
+          py::call_guard<py::gil_scoped_release>(),
+          "A function that adds two numbers");
 }
-
