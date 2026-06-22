@@ -1,3 +1,7 @@
+//-define-file header hpp/midieventCommon.h
+
+
+//-only-file header //-
 #pragma once
 #include <string>
 #include <map>

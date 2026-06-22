@@ -9,6 +9,9 @@
 #pragma once
 //- {include-header}
 #include "MidiClientItf.hpp" //- #include "MidiClientItf.h"
+//- {include-body}
+#include "midievent.hpp" //- #include "midievent.h"
+
 
 //-only-file header
 //-var {PRE} "MidiClient::"
@@ -38,7 +41,13 @@ void testMidi() override
       // access to the timestamp
       std::cerr<< message.bytes.size()<<"\n";
       std::cerr<< message.timestamp<<"\n";
-      
+      int portIdx=1;
+      std::string portName = "asdf";
+      MidiEvent me{message.timestamp, message.bytes, portIdx,portName};
+      std::cerr<< me.commandStr()<<"\n";
+      //libremidi::message_type::NOTE_ON
+      std::cerr<<"msg type "<<(int)message.get_message_type();
+      //libremidi::channel_events::note_on
     };
 
    libremidi::midi_in midi { 
