@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(MyLib)
+add_subdirectory(MyLibPy)
 add_executable(program-changer main.cpp)
 
 target_link_libraries(program-changer PRIVATE MyLib)    
