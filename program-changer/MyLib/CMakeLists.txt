@@ -15,8 +15,6 @@ if(GEN_HPP)
 ${CMAKE_CURRENT_SOURCE_DIR}/hpp/MidiClientItf.hpp
 ${CMAKE_CURRENT_SOURCE_DIR}/hpp/MidiClientUtil.hpp
 ${CMAKE_CURRENT_SOURCE_DIR}/hpp/TelnetClient.hpp
-${CMAKE_CURRENT_SOURCE_DIR}/hpp/midievent.hpp
-${CMAKE_CURRENT_SOURCE_DIR}/hpp/midieventCommon.hpp
     )
     add_custom_target(runScript_b64fa7459a21b0f2b87477be85ed5180eac925e48113d35950b36e2777daa950 ALL
         COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/parseHpp.py ${HPP_GEN_FILES}
@@ -53,9 +51,6 @@ add_library(MyLib STATIC
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/MidiClientItf.h
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/MidiClientUtil.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/MidiClientUtil.h
-    ${CMAKE_CURRENT_BINARY_DIR}/hpp/midievent.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/hpp/midievent.h
-    ${CMAKE_CURRENT_BINARY_DIR}/hpp/midieventCommon.h
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/TelnetClient.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/TelnetClient.h
     )
