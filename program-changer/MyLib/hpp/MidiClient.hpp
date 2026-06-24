@@ -3,10 +3,12 @@
 //-only-file body //-
 //- #include "MidiClient.h"
 #include <iostream>
-#include <libremidi/libremidi.hpp>
+#include <ranges>
 
 //-only-file header //-
 #pragma once
+#include <libremidi/libremidi.hpp>
+
 //- {include-header}
 #include "MidiClientItf.hpp" //- #include "MidiClientItf.h"
 
@@ -16,11 +18,56 @@ class MidiClient : public MidiClientItf
 {
 public:
     //- {fn}
+    void getInPorts() override
+    //-only-file body
+    {
+        std::cout << "\ninputs:\n";
+
+        for (const libremidi::input_port &port : obs.get_input_ports())
+        {
+            std::cout << port.display_name << "\n";
+        }
+    }
+
+    //- {fn}
+    void getOutPorts() override
+    //-only-file body
+    {
+        std::cout << "\noutputs:\n";
+        for (const libremidi::output_port &port : obs.get_output_ports())
+        {
+            std::cout << port.display_name << "\n";
+        }
+    }
+
+
+    
+
+    //- {function} 0 2
+    const libremidi::input_port *getInPortByName(std::string portName, int idx = 0) 
+    //-only-file body
+    {        
+        int foundItems = 0;
+
+        for (const libremidi::input_port &port : obs.get_input_ports())
+        {
+            if (port.display_name == portName) {
+                if (idx == foundItems) {
+                    return &port;
+
+                }
+                foundItems++;
+            } 
+        }        
+         return nullptr;
+    }
+
+    //- {fn}
     void testMidi() override
     //-only-file body
     {
         std::cout << "\ninputs:\n";
-        libremidi::observer obs;
+
         for (const libremidi::input_port &port : obs.get_input_ports())
         {
             std::cout << port.display_name << "\n";
@@ -63,4 +110,9 @@ public:
 
     //-only-file header
 private:
+    libremidi::observer obs;
+    struct LibreMidiPort
+    {
+        std::string portName;
+    };
 };

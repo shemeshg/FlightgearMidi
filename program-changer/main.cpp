@@ -43,8 +43,17 @@ int main(int argc, char *argv[])
 {
 
     auto midiItf = getMidiClientItf();
-    midiItf->testMidi();
-
+    midiItf->getInPorts();
+    midiItf->getOutPorts();
+    try
+    {
+        //
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+    
 
     return 0;
 }
