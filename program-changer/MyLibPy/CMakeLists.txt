@@ -10,3 +10,4 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(pybind11)
 
 pybind11_add_module(MyLibPy MyLibPy.cpp)
+target_link_libraries(MyLibPy PRIVATE MyLib)  
