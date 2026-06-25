@@ -11,6 +11,8 @@
 
 //- {include-header}
 #include "MidiClientItf.hpp" //- #include "MidiClientItf.h"
+//- {include-header}
+#include "LibreMidiInPort.hpp" //- #include "LibreMidiInPort.h"
 
 //-only-file header
 //-var {PRE} "MidiClient::"
@@ -112,27 +114,7 @@ public:
     //-only-file header
 private:
     libremidi::observer obs;
-    class LibreMidiInPort
-    {
-    public:
-        LibreMidiInPort(std::string name, int idx, libremidi::midi_in midi, libremidi::input_port inPort)
-            : portName(std::move(name)) 
-              ,
-              portIdx(idx), midiIn(std::move(midi)),
-              inPort{std::move(inPort)}
-        {
-        }
 
-        void open(){
-            midiIn.open_port(inPort);
-        }
-        
-    private:
-        std::string portName;
-        int portIdx;
-        libremidi::midi_in midiIn; 
-        libremidi::input_port inPort;
-    };
 
     std::vector<LibreMidiInPort> libreMidiInPorts;
 };

@@ -11,7 +11,8 @@ if(GEN_HPP)
 
     set(HPP_GEN_FILES
         ${CMAKE_SOURCE_DIR}/scripts/hppTemplates.txt
-        ${CMAKE_CURRENT_SOURCE_DIR}/hpp/MidiClient.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/hpp/LibreMidiInPort.hpp
+${CMAKE_CURRENT_SOURCE_DIR}/hpp/MidiClient.hpp
 ${CMAKE_CURRENT_SOURCE_DIR}/hpp/MidiClientItf.hpp
 ${CMAKE_CURRENT_SOURCE_DIR}/hpp/MidiClientUtil.hpp
 ${CMAKE_CURRENT_SOURCE_DIR}/hpp/TelnetClient.hpp
@@ -45,6 +46,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(libremidi)
 add_library(MyLib STATIC    
+    ${CMAKE_CURRENT_BINARY_DIR}/hpp/LibreMidiInPort.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/hpp/LibreMidiInPort.h
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/MidiClient.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/MidiClient.h
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/MidiClientItf.cpp
