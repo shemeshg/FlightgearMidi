@@ -48,6 +48,8 @@ int main(int argc, char *argv[])
     try
     {
         midiItf->testMidi();
+        std::string userInput;
+        std::getline(std::cin, userInput);
     }
     catch(const std::exception& e)
     {

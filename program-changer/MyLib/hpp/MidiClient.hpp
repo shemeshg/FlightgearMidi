@@ -4,7 +4,6 @@
 //- #include "MidiClient.h"
 #include <iostream>
 
-
 //-only-file header //-
 #pragma once
 #include <libremidi/libremidi.hpp>
@@ -41,41 +40,46 @@ public:
         }
     }
 
-
-    
-
     //- {function} 0 1
-    std::optional<libremidi::input_port> getInPortByName(std::string portName, int idx = 0) 
+    std::optional<libremidi::input_port> getInPortByName(std::string portName, int idx = 0)
     //-only-file body
-    {        
+    {
         int foundItems = 0;
 
         for (const libremidi::input_port &port : obs.get_input_ports())
         {
-            if (port.display_name == portName) {
-                if (idx == foundItems) {
+            if (port.display_name == portName)
+            {
+                if (idx == foundItems)
+                {
                     return port;
-
                 }
                 foundItems++;
-            } 
-        }        
-       return std::nullopt;
+            }
+        }
+        return std::nullopt;
     }
 
     //- {fn}
     void testMidi() override
     //-only-file body
     {
+        //assume it  is not yet in cash
         std::string portName = "Launch Control XL";
         auto port = getInPortByName(portName);
-        if (port) {
+        if (port)
+        {
             // Port exists, safe to use
             std::cout << "Found port: " << port->display_name << std::endl;
-        } else {
+        }
+        else
+        {
             // Port was not found (returned std::nullopt)
             std::cout << "Port not found!" << std::endl;
+            return;
         }
+
+       
 
 
         auto my_callback = [](const libremidi::message &message)
@@ -99,18 +103,36 @@ public:
 
         libremidi::midi_in midi{
             libremidi::input_configuration{.on_message = my_callback}};
-        midi.open_port(port.value());
-        std::string userInput;
-        std::getline(std::cin, userInput);
-    
-        
+
+        LibreMidiInPort lmip{std::move(portName), 0,std::move(midi), std::move(port.value())};
+        lmip.open();
+        libreMidiInPorts.push_back(std::move(lmip));
     }
 
     //-only-file header
 private:
     libremidi::observer obs;
-    struct LibreMidiPort
+    class LibreMidiInPort
     {
+    public:
+        LibreMidiInPort(std::string name, int idx, libremidi::midi_in midi, libremidi::input_port inPort)
+            : portName(std::move(name)) 
+              ,
+              portIdx(idx), midiIn(std::move(midi)),
+              inPort{std::move(inPort)}
+        {
+        }
+
+        void open(){
+            midiIn.open_port(inPort);
+        }
+        
+    private:
         std::string portName;
+        int portIdx;
+        libremidi::midi_in midiIn; 
+        libremidi::input_port inPort;
     };
+
+    std::vector<LibreMidiInPort> libreMidiInPorts;
 };
