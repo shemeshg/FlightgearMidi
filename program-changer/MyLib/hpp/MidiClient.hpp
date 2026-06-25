@@ -66,22 +66,47 @@ public:
     void testMidi() override
     //-only-file body
     {
-        //assume it  is not yet in cash
         std::string portName = "Launch Control XL";
+        int portIdx = 0;
+        /*
+telnet:
+  host: "localhost"
+  port: 5500
+
+midi:
+  ports:
+    - name: "Launch Control XL"
+      index: 0
+      mappings:
+        - id: throttle
+          match:
+            type: control_change
+            control: 77
+          transform:
+            from: [0, 127]
+            to: [0, 1]
+            round: 3
+          command: "/controls/engines/engine/throttle ${throttle}"
+        */
+
+
         auto port = getInPortByName(portName);
         if (port)
         {
-            // Port exists, safe to use
             std::cout << "Found port: " << port->display_name << std::endl;
         }
         else
         {
-            // Port was not found (returned std::nullopt)
             std::cout << "Port not found!" << std::endl;
             return;
         }
 
        
+        // Remove previous callback if exited
+        std::erase_if(libreMidiInPorts, [&portName, &portIdx](const LibreMidiInPort& p) {
+            return p.getPortName() == portName && p.getPortIdx() == portIdx;
+        }) ;
+
 
 
         auto my_callback = [](const libremidi::message &message)
@@ -114,7 +139,6 @@ public:
     //-only-file header
 private:
     libremidi::observer obs;
-
 
     std::vector<LibreMidiInPort> libreMidiInPorts;
 };
