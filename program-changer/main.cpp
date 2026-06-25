@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     midiItf->getOutPorts();
     try
     {
-        //
+        midiItf->testMidi();
     }
     catch(const std::exception& e)
     {

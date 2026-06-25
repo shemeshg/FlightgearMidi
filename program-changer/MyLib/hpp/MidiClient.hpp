@@ -3,11 +3,12 @@
 //-only-file body //-
 //- #include "MidiClient.h"
 #include <iostream>
-#include <ranges>
+
 
 //-only-file header //-
 #pragma once
 #include <libremidi/libremidi.hpp>
+#include <optional>
 
 //- {include-header}
 #include "MidiClientItf.hpp" //- #include "MidiClientItf.h"
@@ -43,8 +44,8 @@ public:
 
     
 
-    //- {function} 0 2
-    const libremidi::input_port *getInPortByName(std::string portName, int idx = 0) 
+    //- {function} 0 1
+    std::optional<libremidi::input_port> getInPortByName(std::string portName, int idx = 0) 
     //-only-file body
     {        
         int foundItems = 0;
@@ -53,37 +54,32 @@ public:
         {
             if (port.display_name == portName) {
                 if (idx == foundItems) {
-                    return &port;
+                    return port;
 
                 }
                 foundItems++;
             } 
         }        
-         return nullptr;
+       return std::nullopt;
     }
 
     //- {fn}
     void testMidi() override
     //-only-file body
     {
-        std::cout << "\ninputs:\n";
+        std::string portName = "Launch Control XL";
+        auto port = getInPortByName(portName);
+        if (port) {
+            // Port exists, safe to use
+            std::cout << "Found port: " << port->display_name << std::endl;
+        } else {
+            // Port was not found (returned std::nullopt)
+            std::cout << "Port not found!" << std::endl;
+        }
 
-        for (const libremidi::input_port &port : obs.get_input_ports())
-        {
-            std::cout << port.display_name << "\n";
-        }
-        std::cout << "\noutputs:\n";
-        for (const libremidi::output_port &port : obs.get_output_ports())
-        {
-            std::cout << port.display_name << "\n";
-        }
+
         auto my_callback = [](const libremidi::message &message)
         {
-            // how many bytes
-            // message.size();
-            // access to the individual bytes
-            // message[i];
-            // access to the timestamp
             std::cerr << message.bytes.size() << "\n";
             std::cerr << message.timestamp << "\n";
 
@@ -103,9 +99,11 @@ public:
 
         libremidi::midi_in midi{
             libremidi::input_configuration{.on_message = my_callback}};
-        midi.open_port(obs.get_input_ports()[1]);
+        midi.open_port(port.value());
         std::string userInput;
         std::getline(std::cin, userInput);
+    
+        
     }
 
     //-only-file header
