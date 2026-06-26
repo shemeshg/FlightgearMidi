@@ -73,12 +73,18 @@ telnet:
   host: "localhost"
   port: 5500
 
+presets:
+  default:
+    active: true
+
 midi:
   ports:
     - name: "Launch Control XL"
       index: 0
       mappings:
         - id: throttle
+          presets:
+            - default
           match:
             type: control_change
             control: 77
@@ -86,7 +92,17 @@ midi:
             from: [0, 127]
             to: [0, 1]
             round: 3
-          command: "/controls/engines/engine/throttle ${throttle}"
+          command: "set /controls/engines/engine/throttle ${throttle}"
+       - id: engine_start_macro
+          match:
+            type: note_on
+            note: 40
+          macro:
+            - command: "/controls/engines/engine[0]/starter 1"
+            - command: "/controls/engines/engine[0]/mixture 1"
+            - command: "/controls/engines/engine[0]/throttle 0.2"
+            - delay: 500   # milliseconds
+            - command: "/controls/engines/engine[0]/starter 0"          
         */
 
 
