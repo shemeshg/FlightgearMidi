@@ -3,6 +3,9 @@
 //-only-file body //-
 //- #include "MidiClient.h"
 #include <iostream>
+#include <algorithm>
+#include <cmath>
+#include <string>
 
 //-only-file header //-
 #pragma once
@@ -72,9 +75,30 @@ public:
 telnet:
   host: "localhost"
   port: 5500
+  connect_on_start: true
+  reconnect: true
+  reconnect_delay: 2000   # ms
+  read_interval: 50       # how often to poll telnet (ms)
+  command_prefix: ""
+  command_suffix: "\n"
+  debug: false
+
+  # When FlightGear sends property updates (because "follow" is enabled)
+  # you can map them to MIDI outputs here:
+  inbound:
+    - id: mixture_feedback
+      property: "/controls/engines/engine[0]/mixture"
+      transform:
+        from: [0, 1]
+        to: [0, 127]
+        round: 0
+      midi_out:
+        port: "Launch Control XL"
+        type: control_change
+        control: 77
 
 presets:
-  default:
+  selected_1:
     active: true
 
 midi:
@@ -84,7 +108,7 @@ midi:
       mappings:
         - id: throttle
           presets:
-            - default
+            - selected_1
           match:
             type: control_change
             control: 77
@@ -102,9 +126,8 @@ midi:
             - command: "/controls/engines/engine[0]/mixture 1"
             - command: "/controls/engines/engine[0]/throttle 0.2"
             - delay: 500   # milliseconds
-            - command: "/controls/engines/engine[0]/starter 0"          
+            - command: "/controls/engines/engine[0]/starter 0"
         */
-
 
         auto port = getInPortByName(portName);
         if (port)
@@ -117,15 +140,11 @@ midi:
             return;
         }
 
-       
         // Remove previous callback if exited
-        std::erase_if(libreMidiInPorts, [&portName, &portIdx](const LibreMidiInPort& p) {
-            return p.getPortName() == portName && p.getPortIdx() == portIdx;
-        }) ;
+        std::erase_if(libreMidiInPorts, [&portName, &portIdx](const LibreMidiInPort &p)
+                      { return p.getPortName() == portName && p.getPortIdx() == portIdx; });
 
-
-
-        auto my_callback = [](const libremidi::message &message)
+        auto my_callback = [this](const libremidi::message &message)
         {
             std::cerr << message.bytes.size() << "\n";
             std::cerr << message.timestamp << "\n";
@@ -140,16 +159,55 @@ midi:
             }
             else if (message.get_message_type() == libremidi::message_type::CONTROL_CHANGE)
             {
-                std::cerr << "Control change\n";
+                if (message.bytes[1] == 77)
+                {
+                    std::cerr << "Control change throttle ";
+                    double val = this->translateClamped(message.bytes[2], 0, 127, 0, 1);
+                    std::cerr << this->formatN(val,3) << "\n";
+                }
+                else
+                {
+                    std::cerr << "Control change\n";
+                }
             }
         };
 
         libremidi::midi_in midi{
             libremidi::input_configuration{.on_message = my_callback}};
 
-        LibreMidiInPort lmip{std::move(portName), 0,std::move(midi), std::move(port.value())};
+        LibreMidiInPort lmip{std::move(portName), 0, std::move(midi), std::move(port.value())};
         lmip.open();
         libreMidiInPorts.push_back(std::move(lmip));
+    }
+
+    //- {fn}
+    double translateClamped(double value,
+                            double fromStart, double fromEnd,
+                            double toStart, double toEnd)
+    //-only-file body
+    {
+        double t = (value - fromStart) / (fromEnd - fromStart);
+        t = std::clamp(t, 0.0, 1.0);
+        return toStart + t * (toEnd - toStart);
+    }
+
+    //- {fn}
+    std::string formatN(double x, int decimals)
+    //-only-file body
+    {
+        double scale = std::pow(10.0, decimals);
+        double r = std::round(x * scale) / scale;
+
+        std::string s = std::to_string(r);
+
+        // remove trailing zeros
+        s.erase(s.find_last_not_of('0') + 1);
+
+        // remove trailing decimal point
+        if (!s.empty() && s.back() == '.')
+            s.pop_back();
+
+        return s;
     }
 
     //-only-file header
@@ -157,4 +215,6 @@ private:
     libremidi::observer obs;
 
     std::vector<LibreMidiInPort> libreMidiInPorts;
+
+    //-only-file header
 };
