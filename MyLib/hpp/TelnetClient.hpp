@@ -156,6 +156,7 @@ private:
             {
                 std::cerr << "\n[DEBUG] Socket error or closed. Bytes: " << bytes << "\n";
                 is_running = false;
+
                 break;
             }
 

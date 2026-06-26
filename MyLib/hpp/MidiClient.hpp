@@ -100,47 +100,47 @@ public:
 
         auto my_callback = [this](const libremidi::message &message)
         {
-            std::cerr << message.bytes.size() << "\n";
-            std::cerr << message.timestamp << "\n";
+            //std::cerr << message.bytes.size() << "\n";
+            //std::cerr << message.timestamp << "\n";
 
             if (message.get_message_type() == libremidi::message_type::NOTE_ON)
             {
-                std::cerr << "Notes ON\n";
+                //std::cerr << "Notes ON\n";
             }
             else if (message.get_message_type() == libremidi::message_type::NOTE_OFF)
             {
-                std::cerr << "Notes OFF\n";
+                //std::cerr << "Notes OFF\n";
             }
             else if (message.get_message_type() == libremidi::message_type::CONTROL_CHANGE)
             {                
                 if (message.bytes[1] == 77)
                 {
-                    std::cerr << "Control change throttle ";
+                    //std::cerr << "Control change throttle ";
                     double val = this->translateClamped(message.bytes[2], 0, 127, 0, 1);                    
-                    std::cerr << this->formatN(val,3) << "\n";
+                    //std::cerr << this->formatN(val,3) << "\n";
                     telnetClient.setValue("/controls/engines/engine[0]/throttle",this->formatN(val,3) );
                 } else if (message.bytes[1] == 78)
                 {
-                    std::cerr << "Control change rudder ";
+                    //std::cerr << "Control change rudder ";
                     double val = this->translateClamped(message.bytes[2], 0, 127, -1, 1);
-                    std::cerr << this->formatN(val,3) << "\n";
+                    //std::cerr << this->formatN(val,3) << "\n";
                     telnetClient.setValue("/controls/flight/rudder",this->formatN(val,3) );
                 } else if (message.bytes[1] == 79)
                 {
-                    std::cerr << "Control change aileron ";
+                    //std::cerr << "Control change aileron ";
                     double val = this->translateClamped(message.bytes[2], 0, 127, -1, 1);
-                    std::cerr << this->formatN(val,3) << "\n";
+                    //std::cerr << this->formatN(val,3) << "\n";
                     telnetClient.setValue("/controls/flight/aileron",this->formatN(val,3) );
                 } else if (message.bytes[1] == 80)
                 {
-                    std::cerr << "Control change elevator ";
+                    //std::cerr << "Control change elevator ";
                     double val = this->translateClamped(message.bytes[2], 0, 127, -1, 1);
-                    std::cerr << this->formatN(val,3) << "\n";
+                    //std::cerr << this->formatN(val,3) << "\n";
                     telnetClient.setValue("/controls/flight/elevator",this->formatN(val,3) );
                 }
                 else
                 {
-                    std::cerr << "Control change\n";
+                    //std::cerr << "Control change\n";
                 }
             }
         };
