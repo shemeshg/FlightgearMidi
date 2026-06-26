@@ -16,6 +16,8 @@
 #include "MidiClientItf.hpp" //- #include "MidiClientItf.h"
 //- {include-header}
 #include "LibreMidiInPort.hpp" //- #include "LibreMidiInPort.h"
+//- {include-header}
+#include "TelnetClient.hpp" //- #include "TelnetClient.h"
 
 //-only-file header
 //-var {PRE} "MidiClient::"
@@ -69,67 +71,19 @@ public:
     void testMidi() override
     //-only-file body
     {
-        std::string portName = "Launch Control XL";
-        int portIdx = 0;
-        /*
-telnet:
-  host: "localhost"
-  port: 5500
-  connect_on_start: true
-  reconnect: true
-  reconnect_delay: 2000   # ms
-  read_interval: 50       # how often to poll telnet (ms)
-  command_prefix: ""
-  command_suffix: "\n"
-  debug: false
+        std::string telnetHost = "localhost";
+        std::string telnetPort = "5500";
+        if (!telnetClient.openSocket(telnetHost, telnetPort))
+        {
+            std::cout << "Telnet server - could not connect!" << std::endl;
+            return;
+        }
 
-  # When FlightGear sends property updates (because "follow" is enabled)
-  # you can map them to MIDI outputs here:
-  inbound:
-    - id: mixture_feedback
-      property: "/controls/engines/engine[0]/mixture"
-      transform:
-        from: [0, 1]
-        to: [0, 127]
-        round: 0
-      midi_out:
-        port: "Launch Control XL"
-        type: control_change
-        control: 77
 
-presets:
-  selected_1:
-    active: true
+        std::string midiPortName = "Launch Control XL";
+        int midiPortIdx = 0;
 
-midi:
-  ports:
-    - name: "Launch Control XL"
-      index: 0
-      mappings:
-        - id: throttle
-          presets:
-            - selected_1
-          match:
-            type: control_change
-            control: 77
-          transform:
-            from: [0, 127]
-            to: [0, 1]
-            round: 3
-          command: "set /controls/engines/engine/throttle ${throttle}"
-       - id: engine_start_macro
-          match:
-            type: note_on
-            note: 40
-          macro:
-            - command: "/controls/engines/engine[0]/starter 1"
-            - command: "/controls/engines/engine[0]/mixture 1"
-            - command: "/controls/engines/engine[0]/throttle 0.2"
-            - delay: 500   # milliseconds
-            - command: "/controls/engines/engine[0]/starter 0"
-        */
-
-        auto port = getInPortByName(portName);
+        auto port = getInPortByName(midiPortName);
         if (port)
         {
             std::cout << "Found port: " << port->display_name << std::endl;
@@ -141,8 +95,8 @@ midi:
         }
 
         // Remove previous callback if exited
-        std::erase_if(libreMidiInPorts, [&portName, &portIdx](const LibreMidiInPort &p)
-                      { return p.getPortName() == portName && p.getPortIdx() == portIdx; });
+        std::erase_if(libreMidiInPorts, [&midiPortName, &midiPortIdx](const LibreMidiInPort &p)
+                      { return p.getPortName() == midiPortName && p.getPortIdx() == midiPortIdx; });
 
         auto my_callback = [this](const libremidi::message &message)
         {
@@ -158,12 +112,31 @@ midi:
                 std::cerr << "Notes OFF\n";
             }
             else if (message.get_message_type() == libremidi::message_type::CONTROL_CHANGE)
-            {
+            {                
                 if (message.bytes[1] == 77)
                 {
                     std::cerr << "Control change throttle ";
-                    double val = this->translateClamped(message.bytes[2], 0, 127, 0, 1);
+                    double val = this->translateClamped(message.bytes[2], 0, 127, 0, 1);                    
                     std::cerr << this->formatN(val,3) << "\n";
+                    telnetClient.setValue("/controls/engines/engine[0]/throttle",this->formatN(val,3) );
+                } else if (message.bytes[1] == 78)
+                {
+                    std::cerr << "Control change rudder ";
+                    double val = this->translateClamped(message.bytes[2], 0, 127, -1, 1);
+                    std::cerr << this->formatN(val,3) << "\n";
+                    telnetClient.setValue("/controls/flight/rudder",this->formatN(val,3) );
+                } else if (message.bytes[1] == 79)
+                {
+                    std::cerr << "Control change aileron ";
+                    double val = this->translateClamped(message.bytes[2], 0, 127, -1, 1);
+                    std::cerr << this->formatN(val,3) << "\n";
+                    telnetClient.setValue("/controls/flight/aileron",this->formatN(val,3) );
+                } else if (message.bytes[1] == 80)
+                {
+                    std::cerr << "Control change elevator ";
+                    double val = this->translateClamped(message.bytes[2], 0, 127, -1, 1);
+                    std::cerr << this->formatN(val,3) << "\n";
+                    telnetClient.setValue("/controls/flight/elevator",this->formatN(val,3) );
                 }
                 else
                 {
@@ -175,7 +148,7 @@ midi:
         libremidi::midi_in midi{
             libremidi::input_configuration{.on_message = my_callback}};
 
-        LibreMidiInPort lmip{std::move(portName), 0, std::move(midi), std::move(port.value())};
+        LibreMidiInPort lmip{std::move(midiPortName), 0, std::move(midi), std::move(port.value())};
         lmip.open();
         libreMidiInPorts.push_back(std::move(lmip));
     }
@@ -215,6 +188,7 @@ private:
     libremidi::observer obs;
 
     std::vector<LibreMidiInPort> libreMidiInPorts;
+    TelnetClient telnetClient;
 
     //-only-file header
 };
