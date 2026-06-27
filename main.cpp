@@ -51,15 +51,35 @@ int main(int argc, char *argv[])
         std::string userInput;
         while (true)
         {
-            std::getline(std::cin, userInput);
-            if (midiItf->getTelnetDisconnected())
+            if (midiItf->getIsTelnetRunning())
             {
-                std::cout << "Sty to Rrestart\n";
-                midiItf->testMidi();
+                std::cout << "Connected\nq=quit\n";
+                std::getline(std::cin, userInput);
+                if (userInput == "q")
+                {
+                    break;
+                }
             }
-            if (userInput == "q")
+            else
             {
-                break;
+                if (midiItf->getIsTelnetDisconnectedSignal())
+                {
+                    std::cout << "Try to Rrestart\n";
+                    midiItf->testMidi();
+                }
+                else
+                {
+                    std::cout << "Not Connected\n r=restart q=quit\n";
+                    std::getline(std::cin, userInput);
+                    if (userInput == "q")
+                    {
+                        break;
+                    }
+                    else if (userInput == "r")
+                    {
+                        midiItf->testMidi();
+                    }
+                }
             }
         }
     }
