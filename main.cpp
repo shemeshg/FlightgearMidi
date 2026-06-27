@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
         while (true)
         {
             std::getline(std::cin, userInput);
-            if (midiItf->getTelnetRestartRequested())
+            if (midiItf->getTelnetDisconnected())
             {
                 std::cout << "Sty to Rrestart\n";
                 midiItf->testMidi();

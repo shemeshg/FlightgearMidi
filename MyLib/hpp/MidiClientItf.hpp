@@ -17,7 +17,7 @@ public:
     virtual void testMidi() = 0;
     virtual void getInPorts() = 0;
     virtual void getOutPorts() = 0;
-    virtual bool getTelnetRestartRequested() =0;
+    virtual bool getTelnetDisconnected() =0;
 
 
     virtual ~MidiClientItf() = default;

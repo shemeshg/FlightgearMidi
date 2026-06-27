@@ -34,15 +34,15 @@ public:
         telnetClient.on_disconnect = [&]() {
             std::cerr << "[MAIN] Telnet disconnected, restart requested...\n";
 
-            telnetRestartRequested = true;
+            telnetDisconnected = true;
         };
     }
 
     //- {fn}
-    bool getTelnetRestartRequested() override
+    bool getTelnetDisconnected() override
     //-only-file body
     {
-        return telnetRestartRequested;
+        return telnetDisconnected;
     }
 
     //- {fn}
@@ -92,7 +92,7 @@ public:
     void testMidi() override
     //-only-file body
     {
-        telnetRestartRequested = false;
+        telnetDisconnected = false;
         std::string telnetHost = "localhost";
         std::string telnetPort = "5500";
         telnetClient.stop();
@@ -208,7 +208,7 @@ public:
 
     //-only-file header
 private:
-    std::atomic<bool> telnetRestartRequested = false;
+    std::atomic<bool> telnetDisconnected = false;
     libremidi::observer obs;
 
     std::vector<LibreMidiInPort> libreMidiInPorts;
