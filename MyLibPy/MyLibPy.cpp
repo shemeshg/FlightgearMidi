@@ -1,12 +1,14 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <iostream>
 #include "MidiClientUtil.h"
 
 namespace py = pybind11;
 
 void test_midi() {
-    auto midiItf = getMidiClientItf();
-    midiItf->testMidi();
+    //auto midiItf = getMidiClientItf();
+    //midiItf->testMidi();
+    std::cout<<"yes\n";
 }
 
 PYBIND11_MODULE(MyLibPy, m) {

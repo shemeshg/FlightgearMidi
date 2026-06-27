@@ -5,6 +5,12 @@
 int testTelnet()
 {
 
+    std::unordered_map<std::string, bool> profiles = {
+        {"c172p-fg1000-kap", false}
+    };
+
+
+
     std::string host = "localhost";
     std::string port = "5500";
 
@@ -22,13 +28,14 @@ int testTelnet()
     for (float i=0;i<=100;i++){
         std::cout << "\n[get RESULT] "<< std::to_string(0.01* i)<< " " << client.getValue("/controls/engines/engine[0]/throttle") << "\n\n";
     }
-    */
+    
 
     for (float i = 0; i <= 100; i++)
     {
         client.setValue("/controls/engines/engine[0]/throttle", std::to_string(0.01 * i));
         std::cout << "\n[set RESULT] " << std::to_string(0.01 * i) << "\n\n";
     }
+    */
 
     std::string userInput;
 
@@ -53,12 +60,16 @@ int main(int argc, char *argv[])
         {
             if (midiItf->getIsTelnetRunning())
             {
-                std::cout << "Connected\nq=quit\n";
+                std::cout << "Connected\nq=quit\nt <cmd> = send terminal cmd\n";
                 std::getline(std::cin, userInput);
                 if (userInput == "q")
                 {
                     break;
+                } else if (userInput.starts_with("t ")) {
+                    std::cout << "sending: " << userInput.substr(2)<<"\n";
+                    std::cout << midiItf->sendTerminalCmd(userInput.substr(2));  
                 }
+
             }
             else
             {

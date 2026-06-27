@@ -8,7 +8,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <netdb.h>
-
+#include <regex>
 //-only-file header //-
 #pragma once
 #include <string>
@@ -75,7 +75,7 @@ public:
     }
 
     //- {fn}
-    std::string getValue(const std::string &path)
+    std::string getCmd(const std::string &rawCmd)
     //-only-file body
     {
         std::unique_lock<std::mutex> lock(data_mutex);
@@ -85,7 +85,7 @@ public:
         latest_response.clear();
         accumulated_line.clear();
 
-        std::string cmd = "get " + path + "\r\n";
+        std::string cmd = trim_regex(rawCmd) + "\r\n";
         // std::cerr << "[TX] " << cmd;
         send(sock_fd, cmd.c_str(), cmd.length(), 0);
 
@@ -105,6 +105,13 @@ public:
     }
 
     //- {fn}
+    std::string getValue(const std::string &path)
+    //-only-file body
+    {
+        return getCmd("get " + path );
+    }
+
+    //- {fn}
     void setValue(const std::string &path, const std::string &val)
     //-only-file body
     {
@@ -117,12 +124,12 @@ public:
     //-only-file body
     {
         is_running = false;
-        std::cout<<"In func stop()\n";
+        std::cout << "In func stop()\n";
         if (sock_fd != -1)
         {
             close(sock_fd);
             sock_fd = -1;
-            std::cout<<"In func stop() fd closed\n";
+            std::cout << "In func stop() fd closed\n";
         }
         if (receiver_thread.joinable() && receiver_thread.get_id() != std::this_thread::get_id())
         {
@@ -131,7 +138,7 @@ public:
     }
 
     //-only-file header
-private:    
+private:
     int sock_fd = -1;
 
     std::thread receiver_thread;
@@ -159,15 +166,16 @@ private:
             if (bytes <= 0)
             {
                 std::cerr << "\n[DEBUG] Socket error or closed. Bytes: " << bytes << "\n";
-                //is_running = false;
+                // is_running = false;
                 stop();
-                if (on_disconnect) on_disconnect();
+                if (on_disconnect)
+                    on_disconnect();
                 break;
             }
 
             // 1. Force absolute instant terminal echoing (Bypasses stream lockups)
-            // std::cout << buffer;
-            // std::cout.flush();
+            std::cout << buffer;
+            std::cout.flush();
 
             {
                 std::lock_guard<std::mutex> lock(data_mutex);
@@ -182,9 +190,12 @@ private:
                     {
 
                         // Clean up and strip verbose properties/prompts from the value string
-                        while (!accumulated_line.empty() &&
+                        while (!accumulated_line.empty()                               
+                        &&
                                (accumulated_line.back() == '\n' ||
-                                accumulated_line.back() == '\r'))
+                                accumulated_line.back() == '\r'
+                                )                        
+                            )
                         {
                             accumulated_line.pop_back();
                         }
@@ -216,6 +227,7 @@ private:
         std::cerr << "[INIT] Waiting for FlightGear login/telnet negotiation bytes...\n";
         std::this_thread::sleep_for(std::chrono::milliseconds(400));
 
+        /*
         // Put FlightGear into data mode safely now that the stream is quiet
         std::cerr << "[INIT] Sending 'data\\r\\n' mode command to FlightGear...\n";
         std::string mode_cmd = "data\r\n";
@@ -223,6 +235,14 @@ private:
 
         // Give FlightGear a brief window to process the transition internally
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        */
+    }
+
+    //- {fn}
+    std::string trim_regex(const std::string &s)
+    //-only-file body
+    {
+        return std::regex_replace(s, std::regex(R"(^\s+|\s+$)"), "");
     }
 
     //-only-file header

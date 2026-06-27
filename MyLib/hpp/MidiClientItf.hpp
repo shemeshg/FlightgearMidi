@@ -17,6 +17,7 @@ public:
     virtual void getOutPorts() = 0;
     virtual bool getIsTelnetDisconnectedSignal() = 0;
     virtual bool getIsTelnetRunning() = 0;
+    virtual std::string sendTerminalCmd(std::string cmd) = 0;
 
     virtual ~MidiClientItf() = default;
 };

@@ -38,6 +38,18 @@ public:
     }
 
     //- {fn}
+    std::string sendTerminalCmd(std::string cmd)  override
+    //-only-file body
+    {
+        if (telnetClient.isRunning()) {
+            return telnetClient.getCmd(cmd);
+        } else {
+            return "";
+        }
+        
+    }
+
+    //- {fn}
     bool getIsTelnetRunning() override
     //-only-file body
     {
@@ -147,6 +159,7 @@ public:
                     double val = this->translateClamped(message.bytes[2], 0, 127, 0, 1);
                     // std::cerr << this->formatN(val,3) << "\n";
                     telnetClient.setValue("/controls/engines/engine[0]/throttle", this->formatN(val, 3));
+                    //telnetClient.setValue("/controls/engines/engine[1]/throttle", this->formatN(val, 3));
                 }
                 else if (message.bytes[1] == 78)
                 {
