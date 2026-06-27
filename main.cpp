@@ -7,7 +7,7 @@ int testTelnet()
 
     std::string host = "localhost";
     std::string port = "5500";
-    
+
     TelnetClient client;
 
     if (!client.openSocket(host, port))
@@ -49,13 +49,24 @@ int main(int argc, char *argv[])
     {
         midiItf->testMidi();
         std::string userInput;
-        std::getline(std::cin, userInput);
+        while (true)
+        {
+            std::getline(std::cin, userInput);
+            if (midiItf->getTelnetRestartRequested())
+            {
+                std::cout << "Sty to Rrestart\n";
+                midiItf->testMidi();
+            }
+            if (userInput == "q")
+            {
+                break;
+            }
+        }
     }
-    catch(const std::exception& e)
+    catch (const std::exception &e)
     {
         std::cerr << e.what() << '\n';
     }
-    
 
     return 0;
 }

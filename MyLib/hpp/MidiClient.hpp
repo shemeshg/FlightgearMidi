@@ -2,15 +2,17 @@
 //-define-file header hpp/MidiClient.h
 //-only-file body //-
 //- #include "MidiClient.h"
-#include <iostream>
+
 #include <algorithm>
 #include <cmath>
 #include <string>
+#include <iostream>
 
 //-only-file header //-
 #pragma once
 #include <libremidi/libremidi.hpp>
 #include <optional>
+
 
 //- {include-header}
 #include "MidiClientItf.hpp" //- #include "MidiClientItf.h"
@@ -24,6 +26,25 @@
 class MidiClient : public MidiClientItf
 {
 public:
+
+   //- {function} 0 1
+    explicit MidiClient()
+    //-only-file body
+    {
+        telnetClient.on_disconnect = [&]() {
+            std::cerr << "[MAIN] Telnet disconnected, restart requested...\n";
+
+            telnetRestartRequested = true;
+        };
+    }
+
+    //- {fn}
+    bool getTelnetRestartRequested() override
+    //-only-file body
+    {
+        return telnetRestartRequested;
+    }
+
     //- {fn}
     void getInPorts() override
     //-only-file body
@@ -71,8 +92,10 @@ public:
     void testMidi() override
     //-only-file body
     {
+        telnetRestartRequested = false;
         std::string telnetHost = "localhost";
         std::string telnetPort = "5500";
+        telnetClient.stop();
         if (!telnetClient.openSocket(telnetHost, telnetPort))
         {
             std::cout << "Telnet server - could not connect!" << std::endl;
@@ -122,13 +145,13 @@ public:
                 } else if (message.bytes[1] == 78)
                 {
                     //std::cerr << "Control change rudder ";
-                    double val = this->translateClamped(message.bytes[2], 0, 127, -1, 1);
+                    double val = this->translateClamped(message.bytes[2], 0, 127, 1, -1);
                     //std::cerr << this->formatN(val,3) << "\n";
                     telnetClient.setValue("/controls/flight/rudder",this->formatN(val,3) );
                 } else if (message.bytes[1] == 79)
                 {
                     //std::cerr << "Control change aileron ";
-                    double val = this->translateClamped(message.bytes[2], 0, 127, -1, 1);
+                    double val = this->translateClamped(message.bytes[2], 0, 127, 1, -1);
                     //std::cerr << this->formatN(val,3) << "\n";
                     telnetClient.setValue("/controls/flight/aileron",this->formatN(val,3) );
                 } else if (message.bytes[1] == 80)
@@ -185,10 +208,12 @@ public:
 
     //-only-file header
 private:
+    std::atomic<bool> telnetRestartRequested = false;
     libremidi::observer obs;
 
     std::vector<LibreMidiInPort> libreMidiInPorts;
     TelnetClient telnetClient;
+
 
     //-only-file header
 };

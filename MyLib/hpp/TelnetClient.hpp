@@ -22,6 +22,8 @@ class TelnetClient
 {
 
 public:
+    std::function<void()> on_disconnect;
+
     //- {fn}
     bool isRunning() const
     //-only-file body
@@ -115,19 +117,21 @@ public:
     //-only-file body
     {
         is_running = false;
+        std::cout<<"In func stop()\n";
         if (sock_fd != -1)
         {
             close(sock_fd);
             sock_fd = -1;
+            std::cout<<"In func stop() fd closed\n";
         }
-        if (receiver_thread.joinable())
+        if (receiver_thread.joinable() && receiver_thread.get_id() != std::this_thread::get_id())
         {
             receiver_thread.join();
         }
     }
 
     //-only-file header
-private:
+private:    
     int sock_fd = -1;
 
     std::thread receiver_thread;
@@ -155,8 +159,9 @@ private:
             if (bytes <= 0)
             {
                 std::cerr << "\n[DEBUG] Socket error or closed. Bytes: " << bytes << "\n";
-                is_running = false;
-
+                //is_running = false;
+                stop();
+                if (on_disconnect) on_disconnect();
                 break;
             }
 
