@@ -24,7 +24,6 @@ class TelnetClient
 {
 
 public:
-    std::function<void()> on_disconnect;
     boost::signals2::signal<void(bool)> sigIsRunningChanged;
 
     //- {fn}
@@ -170,8 +169,6 @@ private:
             {
                 std::cerr << "\n[DEBUG] Socket error or closed. Bytes: " << bytes << "\n";
                 stop();
-                if (on_disconnect)
-                    on_disconnect();
                 break;
             }
 

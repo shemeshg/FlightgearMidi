@@ -12,7 +12,6 @@
 #pragma once
 #include <libremidi/libremidi.hpp>
 
-
 //- {include-header}
 #include "MidiClientItf.hpp" //- #include "MidiClientItf.h"
 //- {include-header}
@@ -29,27 +28,26 @@ public:
     explicit MidiClient()
     //-only-file body
     {
-        telnetClient.sigIsRunningChanged.connect([](bool isRunning){
-            std::cerr << "Telnet signal says: "<<isRunning<<"\n";
-        });
-        telnetClient.on_disconnect = [&]()
-        {
+        telnetClient.sigIsRunningChanged.connect([this](bool isRunning)
+                                                 {
+            if (isRunning == false){
             std::cerr << "[MAIN] Telnet disconnected, restart requested...\n";
-
-            telnetDisconnected = true;
-        };
+            this->telnetDisconnected = true;
+            } });
     }
 
     //- {fn}
-    std::string sendTerminalCmd(std::string cmd)  override
+    std::string sendTerminalCmd(std::string cmd) override
     //-only-file body
     {
-        if (telnetClient.isRunning()) {
+        if (telnetClient.isRunning())
+        {
             return telnetClient.getCmd(cmd);
-        } else {
+        }
+        else
+        {
             return "";
         }
-        
     }
 
     //- {fn}
@@ -162,7 +160,7 @@ public:
                     double val = this->translateClamped(message.bytes[2], 0, 127, 0, 1);
                     // std::cerr << this->formatN(val,3) << "\n";
                     telnetClient.setValue("/controls/engines/engine[0]/throttle", this->formatN(val, 3));
-                    //telnetClient.setValue("/controls/engines/engine[1]/throttle", this->formatN(val, 3));
+                    // telnetClient.setValue("/controls/engines/engine[1]/throttle", this->formatN(val, 3));
                 }
                 else if (message.bytes[1] == 78)
                 {
