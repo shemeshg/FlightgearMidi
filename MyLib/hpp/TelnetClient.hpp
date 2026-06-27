@@ -16,6 +16,8 @@
 #include <mutex>
 #include <condition_variable>
 
+#include <boost/signals2.hpp>
+
 //-only-file header
 //-var {PRE} "TelnetClient::"
 class TelnetClient
@@ -23,6 +25,7 @@ class TelnetClient
 
 public:
     std::function<void()> on_disconnect;
+    boost::signals2::signal<void(bool)> sigIsRunningChanged;
 
     //- {fn}
     bool isRunning() const
@@ -108,7 +111,7 @@ public:
     std::string getValue(const std::string &path)
     //-only-file body
     {
-        return getCmd("get " + path );
+        return getCmd("get " + path);
     }
 
     //- {fn}
@@ -123,7 +126,7 @@ public:
     void stop()
     //-only-file body
     {
-        is_running = false;
+        setsRunning(false);
         std::cout << "In func stop()\n";
         if (sock_fd != -1)
         {
@@ -166,7 +169,6 @@ private:
             if (bytes <= 0)
             {
                 std::cerr << "\n[DEBUG] Socket error or closed. Bytes: " << bytes << "\n";
-                // is_running = false;
                 stop();
                 if (on_disconnect)
                     on_disconnect();
@@ -184,38 +186,40 @@ private:
                     accumulated_line += buffer;
 
                     // CHECK Condition A: FlightGear is in data mode and returned a clean line
-                    //bool found_newline = (accumulated_line.find('\n') != std::string::npos);
+                    // bool found_newline = (accumulated_line.find('\n') != std::string::npos);
                     std::string lastLine;
 
                     // Find last newline
                     std::size_t pos = accumulated_line.find_last_of("\r\n");
 
-                    if (pos == std::string::npos) {
-                        lastLine = accumulated_line;            // only one line
-                    } else {
+                    if (pos == std::string::npos)
+                    {
+                        lastLine = accumulated_line; // only one line
+                    }
+                    else
+                    {
                         lastLine = accumulated_line.substr(pos + 1);
                     }
-                    
+
                     // Now check the pattern
                     bool found_prompt_no_data_mode =
                         !lastLine.empty() &&
                         lastLine.front() == '/' &&
-                        lastLine.back()  == '>';
+                        lastLine.back() == '>';
 
-                    
-                    if (found_prompt_no_data_mode) {
+                    if (found_prompt_no_data_mode)
+                    {
                         latest_response = accumulated_line;
                         response_ready = true;
                         expecting_data = false;
                         accumulated_line.clear();
 
                         data_cv.notify_one();
-
                     }
                 }
             }
         }
-        is_running = false;
+        setsRunning(false);
     }
 
     //- {fn}
@@ -224,7 +228,8 @@ private:
     {
         if (is_running)
             return;
-        is_running = true;
+        setsRunning(true);
+
         receiver_thread = std::thread(&TelnetClient::readServer, this);
 
         // FIX: Wait a moment for FlightGear's initial welcoming burst to finish arriving
@@ -250,4 +255,12 @@ private:
     }
 
     //-only-file header
+    void setsRunning(bool bl)
+    {
+        if (bl != is_running)
+        {
+            is_running = bl;
+            sigIsRunningChanged(is_running);
+        }
+    }
 };

@@ -12,7 +12,9 @@ template_dict = {
                 "LIB":  "libremidi",
                 "GIT_REPOSITORY" : "https://github.com/celtera/libremidi" ,
                 "GIT_TAG" : "master"
-           }]
+           }],
+           "FIND_BOOST": True
+
            }
 
 hppFolders = ["hpp"]

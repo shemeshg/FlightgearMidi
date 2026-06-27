@@ -29,6 +29,9 @@ public:
     explicit MidiClient()
     //-only-file body
     {
+        telnetClient.sigIsRunningChanged.connect([](bool isRunning){
+            std::cerr << "Telnet signal says: "<<isRunning<<"\n";
+        });
         telnetClient.on_disconnect = [&]()
         {
             std::cerr << "[MAIN] Telnet disconnected, restart requested...\n";

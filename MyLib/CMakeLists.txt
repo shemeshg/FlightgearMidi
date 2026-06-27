@@ -45,6 +45,11 @@ FetchContent_Declare(
     GIT_TAG        master
 )
 FetchContent_MakeAvailable(libremidi)
+
+cmake_policy(SET CMP0167 NEW)
+find_package(Boost REQUIRED)
+
+
 add_library(MyLib STATIC    
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/LibreMidiInPort.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/LibreMidiInPort.h
@@ -61,6 +66,11 @@ set_target_properties(MyLib PROPERTIES LINKER_LANGUAGE CXX)
 
 target_link_libraries(MyLib PRIVATE libremidi)
 target_include_directories(MyLib PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/hpp)
+
+target_link_libraries(MyLib PUBLIC Boost::boost)
+
+
+
 
 if(GEN_HPP)
   add_dependencies(MyLib runScript_b64fa7459a21b0f2b87477be85ed5180eac925e48113d35950b36e2777daa950)
