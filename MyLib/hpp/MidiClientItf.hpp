@@ -5,7 +5,7 @@
 
 //-only-file header //-
 #pragma once
-#include <memory>
+#include <string>
 
 //-only-file header
 //-var {PRE} "MidiClientItf::"

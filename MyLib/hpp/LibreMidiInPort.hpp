@@ -1,7 +1,7 @@
 //-define-file body hpp/LibreMidiInPort.cpp
 //-define-file header hpp/LibreMidiInPort.h
 //-only-file body //-
-//- #include "MidiClient.h"
+//- #include "LibreMidiInPort.h"
 
 //-only-file header //-
 #pragma once
