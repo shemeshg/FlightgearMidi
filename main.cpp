@@ -6,10 +6,7 @@ int testTelnet()
 {
 
     std::unordered_map<std::string, bool> profiles = {
-        {"c172p-fg1000-kap", false}
-    };
-
-
+        {"c172p-fg1000-kap", false}};
 
     std::string host = "localhost";
     std::string port = "5500";
@@ -28,7 +25,7 @@ int testTelnet()
     for (float i=0;i<=100;i++){
         std::cout << "\n[get RESULT] "<< std::to_string(0.01* i)<< " " << client.getValue("/controls/engines/engine[0]/throttle") << "\n\n";
     }
-    
+
 
     for (float i = 0; i <= 100; i++)
     {
@@ -52,6 +49,7 @@ int main(int argc, char *argv[])
     auto midiItf = getMidiClientItf();
     midiItf->getInPorts();
     midiItf->getOutPorts();
+    bool terminalMode = false;
     try
     {
         midiItf->testMidi();
@@ -60,16 +58,31 @@ int main(int argc, char *argv[])
         {
             if (midiItf->getIsTelnetRunning())
             {
-                std::cout << "Connected\nq=quit\nt <cmd> = send terminal cmd\n";
                 std::getline(std::cin, userInput);
+                if (terminalMode)
+                {
+                }
+                else
+                {
+                    std::cout << "\nConnected\nq=quit\nt=terminal mode on/off\n";
+                }
+
                 if (userInput == "q")
                 {
                     break;
-                } else if (userInput.starts_with("t ")) {
-                    std::cout << "sending: " << userInput.substr(2)<<"\n";
-                    std::cout << midiItf->sendTerminalCmd(userInput.substr(2));  
                 }
-
+                else if (userInput == "t")
+                {
+                    terminalMode = !terminalMode;
+                    if (terminalMode)
+                    {
+                        std::cout << "t - to exit terminal mode\n";
+                    }
+                }
+                else if (terminalMode)
+                {
+                    std::cout << midiItf->sendTerminalCmd(userInput);
+                }
             }
             else
             {

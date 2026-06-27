@@ -174,8 +174,8 @@ private:
             }
 
             // 1. Force absolute instant terminal echoing (Bypasses stream lockups)
-            std::cout << buffer;
-            std::cout.flush();
+            // std::cout << buffer;
+            // std::cout.flush();
 
             {
                 std::lock_guard<std::mutex> lock(data_mutex);
@@ -184,29 +184,33 @@ private:
                     accumulated_line += buffer;
 
                     // CHECK Condition A: FlightGear is in data mode and returned a clean line
-                    bool found_newline = (accumulated_line.find('\n') != std::string::npos);
+                    //bool found_newline = (accumulated_line.find('\n') != std::string::npos);
+                    std::string lastLine;
 
-                    if (found_newline)
-                    {
+                    // Find last newline
+                    std::size_t pos = accumulated_line.find_last_of("\r\n");
 
-                        // Clean up and strip verbose properties/prompts from the value string
-                        while (!accumulated_line.empty()                               
-                        &&
-                               (accumulated_line.back() == '\n' ||
-                                accumulated_line.back() == '\r'
-                                )                        
-                            )
-                        {
-                            accumulated_line.pop_back();
-                        }
+                    if (pos == std::string::npos) {
+                        lastLine = accumulated_line;            // only one line
+                    } else {
+                        lastLine = accumulated_line.substr(pos + 1);
+                    }
+                    
+                    // Now check the pattern
+                    bool found_prompt_no_data_mode =
+                        !lastLine.empty() &&
+                        lastLine.front() == '/' &&
+                        lastLine.back()  == '>';
 
+                    
+                    if (found_prompt_no_data_mode) {
                         latest_response = accumulated_line;
-
                         response_ready = true;
                         expecting_data = false;
                         accumulated_line.clear();
 
                         data_cv.notify_one();
+
                     }
                 }
             }
