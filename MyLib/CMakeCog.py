@@ -4,6 +4,7 @@ import os
 import ImportScript
 from GenHpp import GenHpp
 
+from pathlib import Path
 
 template_dict = {
            "APP_VER": "0.1.0",
@@ -28,6 +29,10 @@ template_dict["HPP_CPP_FILES"] = genHpp.getDefineFiles("${CMAKE_CURRENT_BINARY_D
 template_dict["HPP_GEN_LINK"] = genHpp.add_dependencies()
 template_dict["HPP_INCLUDE_PUBLIC_DIR"] = genHpp.makeDirectories
 
+hppGenFilesGlobesStr = []
+for globStr in  genHpp.hppGenFilesGlobes:
+    hppGenFilesGlobesStr.extend(sorted(["${CMAKE_CURRENT_SOURCE_DIR}/" + str(p) for p in Path(globStr).parent.glob(Path(globStr).name )]))
+template_dict["HPP_ORG_HPP_FILES"] = hppGenFilesGlobesStr
 
 environment = Environment(loader=FileSystemLoader("."))
 template = environment.get_template("CMakeCog.j2")

@@ -19,6 +19,9 @@ add_library({{BIN_NAME}} STATIC
     {% for comp in HPP_CPP_FILES -%}
         {{ comp }}
     {% endfor -%}
+    {% for comp in HPP_ORG_HPP_FILES -%}
+        {{ comp }}
+    {% endfor -%}
 )
 set_target_properties({{BIN_NAME}} PROPERTIES LINKER_LANGUAGE CXX)
 

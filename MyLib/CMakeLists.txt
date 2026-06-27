@@ -61,6 +61,11 @@ add_library(MyLib STATIC
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/MidiClientUtil.h
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/TelnetClient.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/TelnetClient.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hpp/LibreMidiInPort.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hpp/MidiClient.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hpp/MidiClientItf.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hpp/MidiClientUtil.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hpp/TelnetClient.hpp
     )
 set_target_properties(MyLib PROPERTIES LINKER_LANGUAGE CXX)
 
