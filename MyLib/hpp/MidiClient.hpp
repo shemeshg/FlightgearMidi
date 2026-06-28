@@ -179,6 +179,7 @@ public:
         
         dataConfig.dataConfigMidiInputs.push_back(std::move(dataConfigMidiInput));
 
+
         telnetDisconnected = false;
         telnetClient.stop();
         if (!telnetClient.openSocket(dataConfig.telnetHost, dataConfig.telnetPort))
@@ -204,7 +205,7 @@ public:
                 return;
             }
 
-            
+            // For now midiInput by copy until config moved to class variarble            
             auto my_callback = [this, midiInput](const libremidi::message &message)
             {
                 for (const auto &dataConfigFromMidiToTelnet : midiInput.dataConfigFromMidiToTelnets)
