@@ -120,6 +120,63 @@ public:
         auto dataConfigMidiInput = DataConfigMidiInput{};
         dataConfigMidiInput.midiInputIdx = 0;
         dataConfigMidiInput.midiInputName = "Launch Control XL";
+
+        DataConfigFromMidiToTelnet dcfmttThrottle{};
+        dcfmttThrottle.fromStart = 0;
+        dcfmttThrottle.fromEnd = 127;
+        dcfmttThrottle.toStart = 0;
+        dcfmttThrottle.toEnd = 1;
+        dcfmttThrottle.midiMsgType = MidiMsgType::CONTROL_CHANGE;
+        dcfmttThrottle.midiChannel = -1;
+        dcfmttThrottle.notePitchOrCcChannel = 77;
+        dcfmttThrottle.setCmd = "/controls/engines/engine[0]/throttle";
+        dataConfigMidiInput.dataConfigFromMidiToTelnets.push_back(std::move(dcfmttThrottle));
+
+        DataConfigFromMidiToTelnet dcfmttRudder{};
+        dcfmttRudder.fromStart = 0;
+        dcfmttRudder.fromEnd = 127;
+        dcfmttRudder.toStart = 1;
+        dcfmttRudder.toEnd = -1;
+        dcfmttRudder.midiMsgType = MidiMsgType::CONTROL_CHANGE;
+        dcfmttRudder.midiChannel = -1;
+        dcfmttRudder.notePitchOrCcChannel = 78;
+        dcfmttRudder.setCmd = "/controls/flight/rudder";
+        dataConfigMidiInput.dataConfigFromMidiToTelnets.push_back(std::move(dcfmttRudder));
+
+        DataConfigFromMidiToTelnet dcfmttAileron{};
+        dcfmttAileron.fromStart = 0;
+        dcfmttAileron.fromEnd = 127;
+        dcfmttAileron.toStart = 1;
+        dcfmttAileron.toEnd = -1;
+        dcfmttAileron.midiMsgType = MidiMsgType::CONTROL_CHANGE;
+        dcfmttAileron.midiChannel = -1;
+        dcfmttAileron.notePitchOrCcChannel = 79;
+        dcfmttAileron.setCmd = "/controls/flight/aileron";
+        dataConfigMidiInput.dataConfigFromMidiToTelnets.push_back(std::move(dcfmttAileron));
+
+        DataConfigFromMidiToTelnet dcfmttElevator{};
+        dcfmttElevator.fromStart = 0;
+        dcfmttElevator.fromEnd = 127;
+        dcfmttElevator.toStart = -1;
+        dcfmttElevator.toEnd = 1;
+        dcfmttElevator.midiMsgType = MidiMsgType::CONTROL_CHANGE;
+        dcfmttElevator.midiChannel = -1;
+        dcfmttElevator.notePitchOrCcChannel = 80;
+        dcfmttElevator.setCmd = "/controls/flight/elevator";
+        dataConfigMidiInput.dataConfigFromMidiToTelnets.push_back(std::move(dcfmttElevator));
+
+        DataConfigFromMidiToTelnet dcfmttMixure{};
+        dcfmttMixure.fromStart = 0;
+        dcfmttMixure.fromEnd = 127;
+        dcfmttMixure.toStart = 0;
+        dcfmttMixure.toEnd = 1;
+        dcfmttMixure.midiMsgType = MidiMsgType::CONTROL_CHANGE;
+        dcfmttMixure.midiChannel = -1;
+        dcfmttMixure.notePitchOrCcChannel = 84;
+        dcfmttMixure.setCmd = "/controls/engines/current-engine/mixture";
+        dataConfigMidiInput.dataConfigFromMidiToTelnets.push_back(std::move(dcfmttMixure));
+
+        
         dataConfig.dataConfigMidiInputs.push_back(std::move(dataConfigMidiInput));
 
         telnetDisconnected = false;
@@ -130,6 +187,7 @@ public:
             return;
         }
 
+        
         libreMidiInPorts.clear();
         for (const auto &midiInput : dataConfig.dataConfigMidiInputs)
         {
@@ -146,53 +204,23 @@ public:
                 return;
             }
 
-            auto my_callback = [this](const libremidi::message &message)
+            
+            auto my_callback = [this, midiInput](const libremidi::message &message)
             {
-                // std::cerr << message.bytes.size() << "\n";
-                // std::cerr << message.timestamp << "\n";
+                for (const auto &dataConfigFromMidiToTelnet : midiInput.dataConfigFromMidiToTelnets)
+                {
 
-                if (message.get_message_type() == libremidi::message_type::NOTE_ON)
-                {
-                    // std::cerr << "Notes ON\n";
-                }
-                else if (message.get_message_type() == libremidi::message_type::NOTE_OFF)
-                {
-                    // std::cerr << "Notes OFF\n";
-                }
-                else if (message.get_message_type() == libremidi::message_type::CONTROL_CHANGE)
-                {
-                    if (message.bytes[1] == 77)
+
+                    if (dataConfigFromMidiToTelnet.midiMsgType == MidiMsgType::CONTROL_CHANGE &&
+                        message.get_message_type() == libremidi::message_type::CONTROL_CHANGE &&
+                        (dataConfigFromMidiToTelnet.midiChannel == -1 ||
+                         dataConfigFromMidiToTelnet.midiChannel == message.get_channel()) &&
+                        message.bytes[1] == dataConfigFromMidiToTelnet.notePitchOrCcChannel)
                     {
-                        // std::cerr << "Control change throttle ";
-                        double val = this->translateClamped(message.bytes[2], 0, 127, 0, 1);
+                        double val = this->translateClamped(message.bytes[2], dataConfigFromMidiToTelnet.fromStart,
+                                                            dataConfigFromMidiToTelnet.fromEnd, dataConfigFromMidiToTelnet.toStart, dataConfigFromMidiToTelnet.toEnd);
                         // std::cerr << this->formatN(val,3) << "\n";
-                        telnetClient.setValue("/controls/engines/engine[0]/throttle", this->formatN(val, 3));
-                        // telnetClient.setValue("/controls/engines/engine[1]/throttle", this->formatN(val, 3));
-                    }
-                    else if (message.bytes[1] == 78)
-                    {
-                        // std::cerr << "Control change rudder ";
-                        double val = this->translateClamped(message.bytes[2], 0, 127, 1, -1);
-                        // std::cerr << this->formatN(val,3) << "\n";
-                        telnetClient.setValue("/controls/flight/rudder", this->formatN(val, 3));
-                    }
-                    else if (message.bytes[1] == 79)
-                    {
-                        // std::cerr << "Control change aileron ";
-                        double val = this->translateClamped(message.bytes[2], 0, 127, 1, -1);
-                        // std::cerr << this->formatN(val,3) << "\n";
-                        telnetClient.setValue("/controls/flight/aileron", this->formatN(val, 3));
-                    }
-                    else if (message.bytes[1] == 80)
-                    {
-                        // std::cerr << "Control change elevator ";
-                        double val = this->translateClamped(message.bytes[2], 0, 127, -1, 1);
-                        // std::cerr << this->formatN(val,3) << "\n";
-                        telnetClient.setValue("/controls/flight/elevator", this->formatN(val, 3));
-                    }
-                    else
-                    {
-                        // std::cerr << "Control change\n";
+                        telnetClient.setValue(dataConfigFromMidiToTelnet.setCmd, this->formatN(val, 3));
                     }
                 }
             };
