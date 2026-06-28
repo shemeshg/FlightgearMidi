@@ -109,11 +109,114 @@ public:
         return std::nullopt;
     }
 
+
+
     //- {fn}
     void testMidi() override
     //-only-file body
     {
-        auto dataConfig = DataConfig{};
+
+        loadYamalConfigData();
+
+        telnetDisconnected = false;
+        telnetClient.stop();
+        if (!telnetClient.openSocket(dataConfig.telnetHost, dataConfig.telnetPort))
+        {
+            std::cout << "Telnet server - could not connect!" << std::endl;
+            return;
+        }
+
+        
+        libreMidiInPorts.clear();
+        for (const auto &midiInput : dataConfig.dataConfigMidiInputs)
+        {
+            std::string midiInputName = midiInput.midiInputName;
+            int midiInputIdx = midiInput.midiInputIdx;
+            auto port = getInPortByName(midiInputName, midiInput.midiInputIdx);
+            if (port)
+            {
+                std::cout << "Found port: " << port->display_name << std::endl;
+            }
+            else
+            {
+                std::cout << "Port not found!" << std::endl;
+                return;
+            }
+
+            // For now midiInput by copy until config moved to class variarble            
+            auto my_callback = [this, &midiInput](const libremidi::message &message)
+            {
+                for (const auto &dataConfigFromMidiToTelnet : midiInput.dataConfigFromMidiToTelnets)
+                {
+
+
+                    if (dataConfigFromMidiToTelnet.midiMsgType == MidiMsgType::CONTROL_CHANGE &&
+                        message.get_message_type() == libremidi::message_type::CONTROL_CHANGE &&
+                        (dataConfigFromMidiToTelnet.midiChannel == -1 ||
+                         dataConfigFromMidiToTelnet.midiChannel == message.get_channel()) &&
+                        message.bytes[1] == dataConfigFromMidiToTelnet.notePitchOrCcChannel)
+                    {
+                        double val = translateClamped(message.bytes[2], dataConfigFromMidiToTelnet.fromStart,
+                                                            dataConfigFromMidiToTelnet.fromEnd, dataConfigFromMidiToTelnet.toStart, dataConfigFromMidiToTelnet.toEnd);
+                        telnetClient.setValue(dataConfigFromMidiToTelnet.setCmd, this->formatN(val, 3));
+                    }
+                }
+            };
+
+            libremidi::midi_in midi{
+                libremidi::input_configuration{.on_message = my_callback}};
+
+            LibreMidiInPort lmip{std::move(midiInputName), midiInputIdx, std::move(midi), std::move(port.value())};
+            lmip.open();
+            libreMidiInPorts.push_back(std::move(lmip));
+        }
+    }
+
+    //- {fn}
+    double translateClamped(double value,
+                            double fromStart, double fromEnd,
+                            double toStart, double toEnd)
+    //-only-file body
+    {
+        double t = (value - fromStart) / (fromEnd - fromStart);
+        t = std::clamp(t, 0.0, 1.0);
+        return toStart + t * (toEnd - toStart);
+    }
+
+    //- {fn}
+    std::string formatN(double x, int decimals)
+    //-only-file body
+    {
+        double scale = std::pow(10.0, decimals);
+        double r = std::round(x * scale) / scale;
+
+        std::string s = std::to_string(r);
+
+        // remove trailing zeros
+        s.erase(s.find_last_not_of('0') + 1);
+
+        // remove trailing decimal point
+        if (!s.empty() && s.back() == '.')
+            s.pop_back();
+
+        return s;
+    }
+
+    //-only-file header
+private:
+    std::atomic<bool> telnetDisconnected = false;
+    libremidi::observer obs;
+
+    std::vector<LibreMidiInPort> libreMidiInPorts;
+    TelnetClient telnetClient;
+    DataConfig dataConfig{};
+
+
+    //- {fn}
+    void loadYamalConfigData()
+    //-only-file body
+    {
+        dataConfig = DataConfig{};
         dataConfig.telnetHost = "localhost";
         dataConfig.telnetPort = "5500";
 
@@ -176,102 +279,9 @@ public:
         dcfmttMixure.setCmd = "/controls/engines/current-engine/mixture";
         dataConfigMidiInput.dataConfigFromMidiToTelnets.push_back(std::move(dcfmttMixure));
 
-        
+
         dataConfig.dataConfigMidiInputs.push_back(std::move(dataConfigMidiInput));
-
-
-        telnetDisconnected = false;
-        telnetClient.stop();
-        if (!telnetClient.openSocket(dataConfig.telnetHost, dataConfig.telnetPort))
-        {
-            std::cout << "Telnet server - could not connect!" << std::endl;
-            return;
-        }
-
-        
-        libreMidiInPorts.clear();
-        for (const auto &midiInput : dataConfig.dataConfigMidiInputs)
-        {
-            std::string midiInputName = midiInput.midiInputName;
-            int midiInputIdx = midiInput.midiInputIdx;
-            auto port = getInPortByName(midiInputName, midiInput.midiInputIdx);
-            if (port)
-            {
-                std::cout << "Found port: " << port->display_name << std::endl;
-            }
-            else
-            {
-                std::cout << "Port not found!" << std::endl;
-                return;
-            }
-
-            // For now midiInput by copy until config moved to class variarble            
-            auto my_callback = [this, midiInput](const libremidi::message &message)
-            {
-                for (const auto &dataConfigFromMidiToTelnet : midiInput.dataConfigFromMidiToTelnets)
-                {
-
-
-                    if (dataConfigFromMidiToTelnet.midiMsgType == MidiMsgType::CONTROL_CHANGE &&
-                        message.get_message_type() == libremidi::message_type::CONTROL_CHANGE &&
-                        (dataConfigFromMidiToTelnet.midiChannel == -1 ||
-                         dataConfigFromMidiToTelnet.midiChannel == message.get_channel()) &&
-                        message.bytes[1] == dataConfigFromMidiToTelnet.notePitchOrCcChannel)
-                    {
-                        double val = this->translateClamped(message.bytes[2], dataConfigFromMidiToTelnet.fromStart,
-                                                            dataConfigFromMidiToTelnet.fromEnd, dataConfigFromMidiToTelnet.toStart, dataConfigFromMidiToTelnet.toEnd);
-                        // std::cerr << this->formatN(val,3) << "\n";
-                        telnetClient.setValue(dataConfigFromMidiToTelnet.setCmd, this->formatN(val, 3));
-                    }
-                }
-            };
-
-            libremidi::midi_in midi{
-                libremidi::input_configuration{.on_message = my_callback}};
-
-            LibreMidiInPort lmip{std::move(midiInputName), midiInputIdx, std::move(midi), std::move(port.value())};
-            lmip.open();
-            libreMidiInPorts.push_back(std::move(lmip));
-        }
     }
-
-    //- {fn}
-    double translateClamped(double value,
-                            double fromStart, double fromEnd,
-                            double toStart, double toEnd)
-    //-only-file body
-    {
-        double t = (value - fromStart) / (fromEnd - fromStart);
-        t = std::clamp(t, 0.0, 1.0);
-        return toStart + t * (toEnd - toStart);
-    }
-
-    //- {fn}
-    std::string formatN(double x, int decimals)
-    //-only-file body
-    {
-        double scale = std::pow(10.0, decimals);
-        double r = std::round(x * scale) / scale;
-
-        std::string s = std::to_string(r);
-
-        // remove trailing zeros
-        s.erase(s.find_last_not_of('0') + 1);
-
-        // remove trailing decimal point
-        if (!s.empty() && s.back() == '.')
-            s.pop_back();
-
-        return s;
-    }
-
-    //-only-file header
-private:
-    std::atomic<bool> telnetDisconnected = false;
-    libremidi::observer obs;
-
-    std::vector<LibreMidiInPort> libreMidiInPorts;
-    TelnetClient telnetClient;
 
     //-only-file header
 };
