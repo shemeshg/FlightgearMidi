@@ -11,7 +11,8 @@ if(GEN_HPP)
 
     set(HPP_GEN_FILES
         ${CMAKE_SOURCE_DIR}/scripts/hppTemplates.txt
-        ${CMAKE_CURRENT_SOURCE_DIR}/hpp/LibreMidiInPort.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/hpp/DataConfig.hpp
+${CMAKE_CURRENT_SOURCE_DIR}/hpp/LibreMidiInPort.hpp
 ${CMAKE_CURRENT_SOURCE_DIR}/hpp/MidiClient.hpp
 ${CMAKE_CURRENT_SOURCE_DIR}/hpp/MidiClientItf.hpp
 ${CMAKE_CURRENT_SOURCE_DIR}/hpp/MidiClientUtil.hpp
@@ -51,6 +52,8 @@ find_package(Boost REQUIRED)
 
 
 add_library(MyLib STATIC    
+    ${CMAKE_CURRENT_BINARY_DIR}/hpp/DataConfig.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/hpp/DataConfig.h
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/LibreMidiInPort.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/LibreMidiInPort.h
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/MidiClient.cpp
@@ -61,6 +64,7 @@ add_library(MyLib STATIC
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/MidiClientUtil.h
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/TelnetClient.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/TelnetClient.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hpp/DataConfig.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/hpp/LibreMidiInPort.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/hpp/MidiClient.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/hpp/MidiClientItf.hpp

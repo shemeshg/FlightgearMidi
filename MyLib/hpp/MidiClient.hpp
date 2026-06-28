@@ -18,6 +18,8 @@
 #include "LibreMidiInPort.hpp" //- #include "LibreMidiInPort.h"
 //- {include-header}
 #include "TelnetClient.hpp" //- #include "TelnetClient.h"
+//- {include-header}
+#include "DataConfig.hpp" //- #include "DataConfig.h"
 
 //-only-file header
 //-var {PRE} "MidiClient::"
@@ -111,91 +113,97 @@ public:
     void testMidi() override
     //-only-file body
     {
+        auto dataConfig = DataConfig{};
+        dataConfig.telnetHost = "localhost";
+        dataConfig.telnetPort = "5500";
+
+        auto dataConfigMidiInput = DataConfigMidiInput{};
+        dataConfigMidiInput.midiInputIdx = 0;
+        dataConfigMidiInput.midiInputName = "Launch Control XL";
+        dataConfig.dataConfigMidiInputs.push_back(std::move(dataConfigMidiInput));
+
         telnetDisconnected = false;
-        std::string telnetHost = "localhost";
-        std::string telnetPort = "5500";
         telnetClient.stop();
-        if (!telnetClient.openSocket(telnetHost, telnetPort))
+        if (!telnetClient.openSocket(dataConfig.telnetHost, dataConfig.telnetPort))
         {
             std::cout << "Telnet server - could not connect!" << std::endl;
             return;
         }
 
-        std::string midiPortName = "Launch Control XL";
-        int midiPortIdx = 0;
-
-        auto port = getInPortByName(midiPortName);
-        if (port)
+        libreMidiInPorts.clear();
+        for (const auto &midiInput : dataConfig.dataConfigMidiInputs)
         {
-            std::cout << "Found port: " << port->display_name << std::endl;
+            std::string midiInputName = midiInput.midiInputName;
+            int midiInputIdx = midiInput.midiInputIdx;
+            auto port = getInPortByName(midiInputName, midiInput.midiInputIdx);
+            if (port)
+            {
+                std::cout << "Found port: " << port->display_name << std::endl;
+            }
+            else
+            {
+                std::cout << "Port not found!" << std::endl;
+                return;
+            }
+
+            auto my_callback = [this](const libremidi::message &message)
+            {
+                // std::cerr << message.bytes.size() << "\n";
+                // std::cerr << message.timestamp << "\n";
+
+                if (message.get_message_type() == libremidi::message_type::NOTE_ON)
+                {
+                    // std::cerr << "Notes ON\n";
+                }
+                else if (message.get_message_type() == libremidi::message_type::NOTE_OFF)
+                {
+                    // std::cerr << "Notes OFF\n";
+                }
+                else if (message.get_message_type() == libremidi::message_type::CONTROL_CHANGE)
+                {
+                    if (message.bytes[1] == 77)
+                    {
+                        // std::cerr << "Control change throttle ";
+                        double val = this->translateClamped(message.bytes[2], 0, 127, 0, 1);
+                        // std::cerr << this->formatN(val,3) << "\n";
+                        telnetClient.setValue("/controls/engines/engine[0]/throttle", this->formatN(val, 3));
+                        // telnetClient.setValue("/controls/engines/engine[1]/throttle", this->formatN(val, 3));
+                    }
+                    else if (message.bytes[1] == 78)
+                    {
+                        // std::cerr << "Control change rudder ";
+                        double val = this->translateClamped(message.bytes[2], 0, 127, 1, -1);
+                        // std::cerr << this->formatN(val,3) << "\n";
+                        telnetClient.setValue("/controls/flight/rudder", this->formatN(val, 3));
+                    }
+                    else if (message.bytes[1] == 79)
+                    {
+                        // std::cerr << "Control change aileron ";
+                        double val = this->translateClamped(message.bytes[2], 0, 127, 1, -1);
+                        // std::cerr << this->formatN(val,3) << "\n";
+                        telnetClient.setValue("/controls/flight/aileron", this->formatN(val, 3));
+                    }
+                    else if (message.bytes[1] == 80)
+                    {
+                        // std::cerr << "Control change elevator ";
+                        double val = this->translateClamped(message.bytes[2], 0, 127, -1, 1);
+                        // std::cerr << this->formatN(val,3) << "\n";
+                        telnetClient.setValue("/controls/flight/elevator", this->formatN(val, 3));
+                    }
+                    else
+                    {
+                        // std::cerr << "Control change\n";
+                    }
+                }
+            };
+
+            libremidi::midi_in midi{
+                libremidi::input_configuration{.on_message = my_callback}};
+
+            LibreMidiInPort lmip{std::move(midiInputName), midiInputIdx, std::move(midi), std::move(port.value())};
+            lmip.open();
+            libreMidiInPorts.push_back(std::move(lmip));
         }
-        else
-        {
-            std::cout << "Port not found!" << std::endl;
-            return;
-        }
-
-        // Remove previous callback if exited
-        std::erase_if(libreMidiInPorts, [&midiPortName, &midiPortIdx](const LibreMidiInPort &p)
-                      { return p.getPortName() == midiPortName && p.getPortIdx() == midiPortIdx; });
-
-        auto my_callback = [this](const libremidi::message &message)
-        {
-            // std::cerr << message.bytes.size() << "\n";
-            // std::cerr << message.timestamp << "\n";
-
-            if (message.get_message_type() == libremidi::message_type::NOTE_ON)
-            {
-                // std::cerr << "Notes ON\n";
-            }
-            else if (message.get_message_type() == libremidi::message_type::NOTE_OFF)
-            {
-                // std::cerr << "Notes OFF\n";
-            }
-            else if (message.get_message_type() == libremidi::message_type::CONTROL_CHANGE)
-            {
-                if (message.bytes[1] == 77)
-                {
-                    // std::cerr << "Control change throttle ";
-                    double val = this->translateClamped(message.bytes[2], 0, 127, 0, 1);
-                    // std::cerr << this->formatN(val,3) << "\n";
-                    telnetClient.setValue("/controls/engines/engine[0]/throttle", this->formatN(val, 3));
-                    // telnetClient.setValue("/controls/engines/engine[1]/throttle", this->formatN(val, 3));
-                }
-                else if (message.bytes[1] == 78)
-                {
-                    // std::cerr << "Control change rudder ";
-                    double val = this->translateClamped(message.bytes[2], 0, 127, 1, -1);
-                    // std::cerr << this->formatN(val,3) << "\n";
-                    telnetClient.setValue("/controls/flight/rudder", this->formatN(val, 3));
-                }
-                else if (message.bytes[1] == 79)
-                {
-                    // std::cerr << "Control change aileron ";
-                    double val = this->translateClamped(message.bytes[2], 0, 127, 1, -1);
-                    // std::cerr << this->formatN(val,3) << "\n";
-                    telnetClient.setValue("/controls/flight/aileron", this->formatN(val, 3));
-                }
-                else if (message.bytes[1] == 80)
-                {
-                    // std::cerr << "Control change elevator ";
-                    double val = this->translateClamped(message.bytes[2], 0, 127, -1, 1);
-                    // std::cerr << this->formatN(val,3) << "\n";
-                    telnetClient.setValue("/controls/flight/elevator", this->formatN(val, 3));
-                }
-                else
-                {
-                    // std::cerr << "Control change\n";
-                }
-            }
-        };
-
-        libremidi::midi_in midi{
-            libremidi::input_configuration{.on_message = my_callback}};
-
-        LibreMidiInPort lmip{std::move(midiPortName), 0, std::move(midi), std::move(port.value())};
-        lmip.open();
-        libreMidiInPorts.push_back(std::move(lmip));
     }
 
     //- {fn}
