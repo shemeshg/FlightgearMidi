@@ -18,6 +18,8 @@ public:
     virtual bool getIsTelnetDisconnectedSignal() = 0;
     virtual bool getIsTelnetRunning() = 0;
     virtual std::string sendTerminalCmd(std::string cmd) = 0;
+    virtual void sendTerminalRaw(std::string cmd) = 0;
+    virtual void setIsTerminalDebugMode(bool bl)  = 0;
 
     virtual ~MidiClientItf() = default;
 };

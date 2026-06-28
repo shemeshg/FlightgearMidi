@@ -36,7 +36,43 @@ public:
             std::cerr << "[MAIN] Telnet disconnected, restart requested...\n";
             this->telnetDisconnected = true;
             } });
+
+            
+        std::thread worker([this]()
+                           {
+            while (true) {
+                if(telnetClient.isRunning()){
+                    if (!telnetClient.getIsTerminalDebugMode()){
+                        std::cout <<"throttle "<< telnetClient.getValue("/controls/engines/engine[0]/throttle") <<"\n";
+                        std::cout <<"rudder "<< telnetClient.getValue("/controls/flight/rudder") <<"\n";
+                    }
+                    
+                    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                }
+
+            } });
+            worker.detach();
+            
     }
+
+    //- {fn}
+    void setIsTerminalDebugMode(bool bl) override
+    //-only-file body
+    {
+        telnetClient.setIsTerminalDebugMode(bl); 
+    }
+
+    //- {fn}
+    void sendTerminalRaw(std::string cmd) override
+    //-only-file body
+    {
+        if (telnetClient.isRunning())
+        {
+            telnetClient.sendTerminalRaw(cmd);
+        }
+       
+    }
+
 
     //- {fn}
     std::string sendTerminalCmd(std::string cmd) override
@@ -109,8 +145,6 @@ public:
         return std::nullopt;
     }
 
-
-
     //- {fn}
     void testMidi() override
     //-only-file body
@@ -126,7 +160,6 @@ public:
             return;
         }
 
-        
         libreMidiInPorts.clear();
         for (const auto &midiInput : dataConfig.dataConfigMidiInputs)
         {
@@ -143,12 +176,11 @@ public:
                 return;
             }
 
-            // For now midiInput by copy until config moved to class variarble            
+            // For now midiInput by copy until config moved to class variarble
             auto my_callback = [this, &midiInput](const libremidi::message &message)
             {
                 for (const auto &dataConfigFromMidiToTelnet : midiInput.dataConfigFromMidiToTelnets)
                 {
-
 
                     if (dataConfigFromMidiToTelnet.midiMsgType == MidiMsgType::CONTROL_CHANGE &&
                         message.get_message_type() == libremidi::message_type::CONTROL_CHANGE &&
@@ -157,7 +189,7 @@ public:
                         message.bytes[1] == dataConfigFromMidiToTelnet.notePitchOrCcChannel)
                     {
                         double val = translateClamped(message.bytes[2], dataConfigFromMidiToTelnet.fromStart,
-                                                            dataConfigFromMidiToTelnet.fromEnd, dataConfigFromMidiToTelnet.toStart, dataConfigFromMidiToTelnet.toEnd);
+                                                      dataConfigFromMidiToTelnet.fromEnd, dataConfigFromMidiToTelnet.toStart, dataConfigFromMidiToTelnet.toEnd);
                         telnetClient.setValue(dataConfigFromMidiToTelnet.setCmd, this->formatN(val, 3));
                     }
                 }
@@ -210,7 +242,6 @@ private:
     std::vector<LibreMidiInPort> libreMidiInPorts;
     TelnetClient telnetClient;
     DataConfig dataConfig{};
-
 
     //- {fn}
     void loadYamalConfigData()
@@ -278,7 +309,6 @@ private:
         dcfmttMixure.notePitchOrCcChannel = 84;
         dcfmttMixure.setCmd = "/controls/engines/current-engine/mixture";
         dataConfigMidiInput.dataConfigFromMidiToTelnets.push_back(std::move(dcfmttMixure));
-
 
         dataConfig.dataConfigMidiInputs.push_back(std::move(dataConfigMidiInput));
     }

@@ -33,6 +33,20 @@ public:
         return is_running;
     }
 
+    //- {fn}
+    bool getIsTerminalDebugMode() const
+    //-only-file body
+    {
+        return isTerminalDebugMode;
+    }
+
+    //- {fn}
+    void setIsTerminalDebugMode(bool bl)
+    //-only-file body
+    {
+        isTerminalDebugMode = bl; 
+    }
+
     //- {function} 0 0
     ~TelnetClient()
     //-only-file body
@@ -113,6 +127,14 @@ public:
         return getCmd("get " + path);
     }
 
+     //- {fn}
+    void sendTerminalRaw(std::string cmd) 
+    //-only-file body
+    {
+        std::string s = cmd + "\r\n";
+        send(sock_fd, s.c_str(), s.length(), 0);
+    }
+
     //- {fn}
     void setValue(const std::string &path, const std::string &val)
     //-only-file body
@@ -141,6 +163,7 @@ public:
 
     //-only-file header
 private:
+    bool isTerminalDebugMode = false;
     int sock_fd = -1;
 
     std::thread receiver_thread;
@@ -173,8 +196,11 @@ private:
             }
 
             // 1. Force absolute instant terminal echoing (Bypasses stream lockups)
-            // std::cout << buffer;
-            // std::cout.flush();
+            if (isTerminalDebugMode) {
+                std::cout << buffer;
+                std::cout.flush();
+            }
+            
 
             {
                 std::lock_guard<std::mutex> lock(data_mutex);
@@ -204,7 +230,12 @@ private:
                         lastLine.front() == '/' &&
                         lastLine.back() == '>';
 
-                    if (found_prompt_no_data_mode)
+
+                    bool found_prompt_data_mode = !accumulated_line.empty() &&
+                               (accumulated_line.back() == '\n' ||
+                                accumulated_line.back() == '\r');
+
+                    if (found_prompt_no_data_mode || found_prompt_data_mode)
                     {
                         latest_response = accumulated_line;
                         response_ready = true;
@@ -233,7 +264,7 @@ private:
         std::cerr << "[INIT] Waiting for FlightGear login/telnet negotiation bytes...\n";
         std::this_thread::sleep_for(std::chrono::milliseconds(400));
 
-        /*
+        
         // Put FlightGear into data mode safely now that the stream is quiet
         std::cerr << "[INIT] Sending 'data\\r\\n' mode command to FlightGear...\n";
         std::string mode_cmd = "data\r\n";
@@ -241,7 +272,7 @@ private:
 
         // Give FlightGear a brief window to process the transition internally
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        */
+        
     }
 
     //- {fn}

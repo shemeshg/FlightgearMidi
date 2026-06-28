@@ -38,6 +38,7 @@ int main(int argc, char *argv[])
                 else if (userInput == "t")
                 {
                     terminalMode = !terminalMode;
+                    midiItf->setIsTerminalDebugMode(terminalMode);
                     if (terminalMode)
                     {
                         std::cout << "t - to exit terminal mode\n";
@@ -45,7 +46,7 @@ int main(int argc, char *argv[])
                 }
                 else if (terminalMode)
                 {
-                    std::cout << midiItf->sendTerminalCmd(userInput);
+                    midiItf->sendTerminalRaw(userInput);
                 }
             }
             else
