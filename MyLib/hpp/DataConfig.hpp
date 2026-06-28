@@ -7,6 +7,8 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <functional>
+#include <iostream>
 
 enum class MidiMsgType : uint8_t
 {
@@ -59,10 +61,21 @@ public:
     std::vector<DataConfigFromMidiToTelnet> dataConfigFromMidiToTelnets;
 };
 
+class DataConfigPullerFgKey
+{
+    public:
+    std::string fgKetPath;
+    std::function<void(std::string,std::string)> callback = [](std::string key ,std::string val){
+        //std::cout<<"the val of "<<key<<" is "<<val<<"\n";
+    };
+
+};
+
 class DataConfig
 {
 public:
     std::string telnetHost;
     std::string telnetPort;
     std::vector<DataConfigMidiInput> dataConfigMidiInputs;
+    std::vector<DataConfigPullerFgKey> dataConfigPullerFgKeys;
 };

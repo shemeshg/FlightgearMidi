@@ -43,8 +43,10 @@ public:
             while (true) {
                 if(telnetClient.isRunning()){
                     if (!telnetClient.getIsTerminalDebugMode()){
-                        std::cout <<"throttle "<< telnetClient.getValue("/controls/engines/engine[0]/throttle") <<"\n";
-                        std::cout <<"rudder "<< telnetClient.getValue("/controls/flight/rudder") <<"\n";
+                        for(const auto &puller: dataConfig.dataConfigPullerFgKeys){                            
+                            std::string pullVal = telnetClient.getValue(puller.fgKetPath);
+                            puller.callback(puller.fgKetPath, pullVal);
+                        }                        
                     }
                     
                     std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -310,7 +312,17 @@ private:
         dcfmttMixure.setCmd = "/controls/engines/current-engine/mixture";
         dataConfigMidiInput.dataConfigFromMidiToTelnets.push_back(std::move(dcfmttMixure));
 
+
         dataConfig.dataConfigMidiInputs.push_back(std::move(dataConfigMidiInput));
+
+        DataConfigPullerFgKey pullerThrottle;
+        pullerThrottle.fgKetPath = "/controls/engines/engine[0]/throttle";
+        dataConfig.dataConfigPullerFgKeys.push_back(std::move(pullerThrottle));
+
+        DataConfigPullerFgKey pullerRudder;
+        pullerRudder.fgKetPath = "/controls/flight/rudder";
+        dataConfig.dataConfigPullerFgKeys.push_back(std::move(pullerRudder));
+
     }
 
     //-only-file header
