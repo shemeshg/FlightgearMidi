@@ -37,10 +37,11 @@ public:
             this->telnetDisconnected = true;
             } });
 
+
             
         std::thread worker([this]()
                            {
-            while (true) {
+            while (true) {                
                 if(telnetClient.isRunning()){
                     if (!telnetClient.getIsTerminalDebugMode()){
                         for(const auto &puller: dataConfig.dataConfigPullerFgKeys){                            

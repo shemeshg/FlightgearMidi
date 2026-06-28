@@ -6,9 +6,8 @@
 namespace py = pybind11;
 
 void test_midi() {
-    //auto midiItf = getMidiClientItf();
-    //midiItf->testMidi();
-    std::cout<<"yes\n";
+    auto midiItf = getMidiClientItf();
+    midiItf->testMidi();
 }
 
 PYBIND11_MODULE(MyLibPy, m) {

@@ -4,12 +4,7 @@
 
 int main(int argc, char *argv[])
 {
-    std::unordered_map<std::string, bool> profiles = {
-        {"c172p-fg1000-kap", false}
-    };
 
-
-    
     auto midiItf = getMidiClientItf();
     midiItf->getInPorts();
     midiItf->getOutPorts();
