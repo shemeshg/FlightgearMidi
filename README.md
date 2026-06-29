@@ -1,153 +1,196 @@
-# FlightGear MIDI Bridge
+# 🎹 FlightgearMidi — Python MIDI → FlightGear Bridge  
+A lightweight C++/pybind11 module with a Python API
 
-A lightweight tool that connects **MIDI controllers** to **FlightGear** via its
-built‑in **telnet property interface**.  
-The goal is to provide a flexible, YAML‑driven mapping system where:
-
-- MIDI → FlightGear (control aircraft)
-- FlightGear → MIDI (feedback to knobs, LEDs, motorized faders)
-- Macros (multi‑command sequences)
-- Value transforms (range mapping, rounding, clamping)
-- Presets (enable/disable groups of mappings)
-
-The project is still in early development, but the configuration format is already
-taking shape.
+This project provides a Python‑friendly interface for configuring MIDI input mappings and FlightGear telnet output.  
+The core logic is implemented in C++ for performance, and exposed to Python using **pybind11**.  
+You write your automation logic in Python — the C++ backend handles MIDI, telnet, and real‑time routing.
 
 ---
 
-## Features (planned / partially implemented)
+## 📦 Features
 
-- **MIDI input**
-  - CC, Note On/Off, channel filtering
-  - Per‑mapping transforms (range, rounding, scaling)
-  - Macros with delays
-  - Preset‑based activation
-
-- **MIDI output**
-  - Send CC/Note messages based on FlightGear property changes
-  - Useful for LED rings, motorized faders, or visual feedback
-
-- **FlightGear telnet**
-  - Connects to FG’s property tree (`set /path value`)
-  - Auto‑reconnect after FlightGear restarts (Shift+Esc)
-  - Optional polling for property updates (“follow” mode)
-
-- **YAML configuration**
-  - Human‑readable
-  - Declarative mapping rules
-  - Easy to extend
+- Python API for all configuration objects (`DataConfig`, `DataConfigMidiInput`, etc.)
+- Real‑time MIDI → FlightGear telnet mapping
+- Python callbacks for FlightGear value changes
+- Simple configuration builder (see `testPy/test.py`)
+- Cross‑platform C++ backend
 
 ---
 
-## Example Configuration
+# 🛠️ Building the Python Module
 
-### Telnet
+### 1. Install dependencies
 
-```yaml
-telnet:
-  host: "localhost"
-  port: 5500
-  connect_on_start: true
-  reconnect: true
-  reconnect_delay: 2000
-  read_interval: 50
-  command_prefix: ""
-  command_suffix: "\n"
-  debug: false
+You need:
 
-  inbound:
-    - id: mixture_feedback
-      property: "/controls/engines/engine[0]/mixture"
-      transform:
-        from: [0, 1]
-        to: [0, 127]
-        round: 0
-      midi_out:
-        port: "Launch Control XL"
-        type: control_change
-        control: 77
+- CMake (3.16+)
+- A C++17 compiler
+- Python 3.10+ (or your preferred version)
+- pybind11
+
+On macOS:
+
+```bash
+brew install cmake pybind11 boost
 ```
 
-This listens for FlightGear sending:
+Optional: create a virtual environment:
 
-```
-/controls/engines/engine[0]/mixture 0.8
-```
-
-…and converts it into a MIDI CC message.
-
----
-
-### MIDI Input
-
-```yaml
-midi:
-  ports:
-    - name: "Launch Control XL"
-      index: 0
-      mappings:
-        - id: throttle
-          presets: [selected_1]
-          match:
-            type: control_change
-            control: 77
-          transform:
-            from: [0, 127]
-            to: [0, 1]
-            round: 3
-          command: "set /controls/engines/engine/throttle ${throttle}"
-
-        - id: engine_start_macro
-          match:
-            type: note_on
-            note: 40
-          macro:
-            - command: "set /controls/engines/engine[0]/starter 1"
-            - command: "set /controls/engines/engine[0]/mixture 1"
-            - command: "set /controls/engines/engine[0]/throttle 0.2"
-            - delay: 500
-            - command: "set /controls/engines/engine[0]/starter 0"
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
 ---
 
-## Presets
+### 2. Configure and build
 
-```yaml
-presets:
-  selected_1:
-    active: true
+From the project root:
+
+```bash
+mkdir build
+cd build
+cmake ..
+make -j
 ```
 
-Presets allow enabling/disabling groups of mappings without editing them.
+This produces a Python extension module:
+
+```
+MyLibPy.cpython-311-darwin.so
+```
+
+(or similar, depending on your Python version)
 
 ---
 
-## Build Status
+### 3. Make Python able to import the module
 
-> ⚠️ **Early development**  
-> Not all features are implemented yet.  
-> Expect breaking changes.
+Option A — copy the module into your virtualenv:
 
----
+```bash
+cp MyLibPy*.so ../.venv/lib/python3.11/site-packages/
+```
 
-## Goals
+Option B — add the build directory to `sys.path` inside your script:
 
-- Zero‑latency MIDI → FG control
-- Smooth feedback loops (FG → MIDI)
-- Clean YAML configuration
-- Robust telnet handling (no hangs after FG crash/restart)
-- Cross‑platform (Linux/Windows/macOS)
-
----
-
-## License
-
-MIT (or whatever you choose)
+```python
+import sys
+sys.path.append("/path/to/FlightgearMidi/build")
+import MyLibPy
+```
 
 ---
 
-## Contributing
+# 🧪 Running the Test Script
 
-Issues, ideas, and pull requests are welcome once the core stabilizes.
+The example script is located at:
+
+```
+testPy/test.py
+```
+
+It demonstrates:
+
+- Creating a `DataConfig`
+- Adding MIDI input mappings
+- Adding FlightGear puller keys
+- Assigning Python callbacks
+- Starting the MIDI client
+- Printing incoming/outgoing values
+
+### Run it:
+
+```bash
+python3 testPy/test.py
+```
+
+---
+
+# 📘 Understanding the Test Script
+
+The script builds a full configuration in Python:
+
+### 1. Create the main config object
+
+```python
+cfg = MyLibPy.DataConfig()
+cfg.telnetHost = "localhost"
+cfg.telnetPort = "5500"
+```
+
+### 2. Add a MIDI input device
+
+```python
+midi_input = MyLibPy.DataConfigMidiInput()
+midi_input.midiInputIdx = 0
+midi_input.midiInputName = "Launch Control XL"
+```
+
+### 3. Add MIDI → FlightGear mappings
+
+Each mapping defines:
+
+- MIDI range (`fromStart`, `fromEnd`)
+- FlightGear range (`toStart`, `toEnd`)
+- MIDI message type
+- MIDI channel / CC number
+- FlightGear command path
+
+Example:
+
+```python
+mapping = MyLibPy.DataConfigFromMidiToTelnet()
+mapping.fromStart = 0
+mapping.fromEnd = 127
+mapping.toStart = 0
+mapping.toEnd = 1
+mapping.midiMsgType = MyLibPy.MidiMsgType.CONTROL_CHANGE
+mapping.notePitchOrCcChannel = 77
+mapping.setCmd = "/controls/engines/engine[0]/throttle"
+
+midi_input.dataConfigFromMidiToTelnets.append(mapping)
+```
+
+### 4. Add FlightGear puller keys with Python callbacks
+
+```python
+pull = MyLibPy.DataConfigPullerFgKey()
+pull.fgKetPath = "/controls/flight/rudder"
+pull.callback = lambda key, val: print(f"FG update: {key} = {val}")
+
+cfg.dataConfigPullerFgKeys.append(pull)
+```
+
+### 5. Send the config to the C++ backend
+
+```python
+midi = MyLibPy.getMidiClientItf()
+midi.setDataConfig(cfg)
+```
+
+### 6. Start the MIDI client
+
+```python
+midi.startMidiClient()
+```
+
+The backend now:
+
+- Reads MIDI input
+- Converts values according to your config
+- Sends commands to FlightGear via telnet
+- Calls your Python callbacks when FG values change
+
+---
+
+# 🎯 Summary
+
+This project gives you a fast C++ backend with a clean Python API:
+
+- Build the module with CMake  
+- Import `MyLibPy` in Python  
+- Construct your config  
+- Start the MIDI client  
+- Enjoy real‑time MIDI → FlightGear control  
 
