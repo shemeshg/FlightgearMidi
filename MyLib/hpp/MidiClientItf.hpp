@@ -8,6 +8,9 @@
 #include <string>
 #include <vector>
 
+//- {include-header}
+#include "DataConfig.hpp" //- #include "DataConfig.h"
+
 //-only-file header
 //-var {PRE} "MidiClientItf::"
 class MidiClientItf
@@ -21,6 +24,8 @@ public:
     virtual std::string sendTerminalCmd(std::string cmd) = 0;
     virtual void sendTerminalRaw(std::string cmd) = 0;
     virtual void setIsTerminalDebugMode(bool bl)  = 0;
+    virtual const DataConfig getDataConfig() const = 0;
+    virtual void setDataConfig(const DataConfig& cfg) = 0;    
 
     virtual ~MidiClientItf() = default;
 };

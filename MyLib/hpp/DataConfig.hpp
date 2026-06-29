@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 #include <functional>
-#include <iostream>
+
 
 enum class MidiMsgType : uint8_t
 {
@@ -66,7 +66,6 @@ class DataConfigPullerFgKey
     public:
     std::string fgKetPath;
     std::function<void(std::string,std::string)> callback = [](std::string key ,std::string val){
-        //std::cout<<"the val of "<<key<<" is "<<val<<"\n";
     };
 
 };
