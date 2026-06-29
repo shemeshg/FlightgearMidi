@@ -24,7 +24,7 @@ enable `telnet` on `Flightgear`
 Settings->additional settings
 
 ```
---telnet=5500
+--telnet=5500 --prop:/sim/terrasync/http-server=http://flightgear.sourceforge.net/scenery
 ```
 
 ### 1. Install dependencies
