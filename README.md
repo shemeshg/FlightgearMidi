@@ -27,6 +27,7 @@ You need:
 - A C++17 compiler
 - Python 3.10+ (or your preferred version)
 - pybind11
+- boost
 
 On macOS:
 
