@@ -13,6 +13,7 @@ import MyLibPy
 def loadConfigData():
     cfg = MyLibPy.DataConfig()
     cfg.telnetHost = "localhost"
+    #cfg.telnetHost = "ubuntumachine.local"
     cfg.telnetPort = "5500"
 
     # --- MIDI INPUT CONFIG ---
