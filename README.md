@@ -195,7 +195,7 @@ The backend now:
 - Reads MIDI input
 - Converts values according to your config
 - Sends commands to FlightGear via telnet
-- Calls your Python callbacks when FG values change
+- Calls your Python callbacks with FG values on interval
 
 ---
 
