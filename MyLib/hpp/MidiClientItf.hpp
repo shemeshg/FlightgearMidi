@@ -6,15 +6,16 @@
 //-only-file header //-
 #pragma once
 #include <string>
+#include <vector>
 
 //-only-file header
 //-var {PRE} "MidiClientItf::"
 class MidiClientItf
 {
 public:
-    virtual void testMidi() = 0;
-    virtual void getInPorts() = 0;
-    virtual void getOutPorts() = 0;
+    virtual void startMidiClient() = 0;
+    virtual std::vector<std::string>  getInPorts() = 0;
+    virtual std::vector<std::string>  getOutPorts() = 0;
     virtual bool getIsTelnetDisconnectedSignal() = 0;
     virtual bool getIsTelnetRunning() = 0;
     virtual std::string sendTerminalCmd(std::string cmd) = 0;

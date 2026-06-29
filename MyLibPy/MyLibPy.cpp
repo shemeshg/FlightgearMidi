@@ -16,7 +16,15 @@ PYBIND11_MODULE(MyLibPy, m) {
         .def("stop", &TelnetClient::stop);
 
     py::class_<MidiClientItf, std::shared_ptr<MidiClientItf>>(m, "MidiClientItf")
-        .def("testMidi", &MidiClientItf::testMidi);
+        .def("startMidiClient", &MidiClientItf::startMidiClient)
+        .def("getIsTelnetRunning", &MidiClientItf::getIsTelnetRunning)
+        .def("getInPorts", &MidiClientItf::getInPorts)
+        .def("getOutPorts", &MidiClientItf::getOutPorts)
+        .def("setIsTerminalDebugMode", &MidiClientItf::setIsTerminalDebugMode)
+        .def("sendTerminalRaw", &MidiClientItf::sendTerminalRaw)
+        .def("getIsTelnetDisconnectedSignal", &MidiClientItf::getIsTelnetDisconnectedSignal)
+                
+        ;
 
     m.def("getMidiClientItf", &getMidiClientItf);
 }

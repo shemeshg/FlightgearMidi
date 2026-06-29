@@ -6,12 +6,21 @@ int main(int argc, char *argv[])
 {
 
     auto midiItf = getMidiClientItf();
-    midiItf->getInPorts();
-    midiItf->getOutPorts();
+    
+    std::cout<<"in ports:\n";
+    for(const auto &itm : midiItf->getInPorts()){
+        std::cout<<" "<<itm<<"\n";
+    }
+    std::cout<<"out ports:\n";
+    for(const auto &itm : midiItf->getOutPorts()){
+        std::cout<<" "<<itm<<"\n";
+    }    
+    std::cout<<"\n";
+
     bool terminalMode = false;
     try
     {
-        midiItf->testMidi();
+        midiItf->startMidiClient();
         std::string userInput;
         while (true)
         {
@@ -49,7 +58,7 @@ int main(int argc, char *argv[])
                 if (midiItf->getIsTelnetDisconnectedSignal())
                 {
                     std::cout << "Try to Rrestart\n";
-                    midiItf->testMidi();
+                    midiItf->startMidiClient();
                 }
                 else
                 {
@@ -61,7 +70,7 @@ int main(int argc, char *argv[])
                     }
                     else if (userInput == "r")
                     {
-                        midiItf->testMidi();
+                        midiItf->startMidiClient();
                     }
                 }
             }

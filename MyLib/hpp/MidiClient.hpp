@@ -106,26 +106,47 @@ public:
     }
 
     //- {fn}
-    void getInPorts() override
+    std::vector<std::string> getInPorts() override
     //-only-file body
     {
-        std::cout << "\ninputs:\n";
+        std::vector<std::string> names;
+        const auto& ports = obs.get_input_ports();
 
-        for (const libremidi::input_port &port : obs.get_input_ports())
-        {
-            std::cout << port.display_name << "\n";
-        }
+        names.reserve(ports.size());
+
+        std::transform(
+            ports.begin(),
+            ports.end(),
+            std::back_inserter(names),
+            [](const libremidi::input_port& port)
+            {
+                return port.display_name;
+            }
+        );
+
+        return names;
     }
 
     //- {fn}
-    void getOutPorts() override
+    std::vector<std::string>  getOutPorts() override
     //-only-file body
     {
-        std::cout << "\noutputs:\n";
-        for (const libremidi::output_port &port : obs.get_output_ports())
-        {
-            std::cout << port.display_name << "\n";
-        }
+        std::vector<std::string> names;
+        const auto& ports = obs.get_output_ports();
+
+        names.reserve(ports.size());
+
+        std::transform(
+            ports.begin(),
+            ports.end(),
+            std::back_inserter(names),
+            [](const libremidi::output_port& port)
+            {
+                return port.display_name;
+            }
+        );
+
+        return names;        
     }
 
     //- {function} 0 1
@@ -149,11 +170,11 @@ public:
     }
 
     //- {fn}
-    void testMidi() override
+    void startMidiClient() override
     //-only-file body
     {
 
-        loadYamalConfigData();
+        loadConfigData();
 
         telnetDisconnected = false;
         telnetClient.stop();
@@ -247,7 +268,7 @@ private:
     DataConfig dataConfig{};
 
     //- {fn}
-    void loadYamalConfigData()
+    void loadConfigData()
     //-only-file body
     {
         dataConfig = DataConfig{};
