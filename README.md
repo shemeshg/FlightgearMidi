@@ -19,6 +19,14 @@ You write your automation logic in Python — the C++ backend handles MIDI, teln
 
 # 🛠️ Building the Python Module
 
+enable `telnet` on `Flightgear`
+
+Settings->additional settings
+
+```
+--telnet=5500
+```
+
 ### 1. Install dependencies
 
 You need:
