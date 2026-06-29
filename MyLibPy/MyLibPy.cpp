@@ -2,18 +2,23 @@
 #include <pybind11/stl.h>
 #include <iostream>
 #include "MidiClientUtil.h"
+#include "TelnetClient.h"
 
 namespace py = pybind11;
 
-void test_midi() {
-    auto midiItf = getMidiClientItf();
-    midiItf->testMidi();
-}
+
 
 PYBIND11_MODULE(MyLibPy, m) {
-    m.doc() = "pybind11 MyLibPy plugin";
+    py::class_<TelnetClient>(m, "TelnetClient")
+        .def(py::init<>())
+        .def("open_socket", &TelnetClient::openSocket)
+        .def("get_cmd", &TelnetClient::getCmd)
+        .def("stop", &TelnetClient::stop);
 
-    m.def("test_midi", &test_midi,
-          py::call_guard<py::gil_scoped_release>(),
-          "test midi");
+    py::class_<MidiClientItf, std::shared_ptr<MidiClientItf>>(m, "MidiClientItf")
+        .def("testMidi", &MidiClientItf::testMidi);
+
+    m.def("getMidiClientItf", &getMidiClientItf);
 }
+
+

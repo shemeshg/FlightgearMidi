@@ -13,8 +13,8 @@
 
 //-var {PRE} ""
 //- {fn}
-std::unique_ptr<MidiClientItf>  getMidiClientItf()
+std::shared_ptr<MidiClientItf> getMidiClientItf()
 //-only-file body
 {
-    return std::make_unique<MidiClient>();
+    return std::make_shared<MidiClient>();
 }
