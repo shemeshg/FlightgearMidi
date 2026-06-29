@@ -4,6 +4,7 @@
 # cog.outl(getCmake())
 # ]]]
 
+
 SET(GEN_HPP TRUE)
 if(GEN_HPP)
     make_directory(${CMAKE_CURRENT_BINARY_DIR}/hpp)

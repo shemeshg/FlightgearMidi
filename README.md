@@ -35,6 +35,12 @@ On macOS:
 brew install cmake pybind11 boost
 ```
 
+on linux
+```bash
+sudo apt-get update && sudo apt-get install libboost-all-dev
+```
+
+
 Optional: create a virtual environment:
 
 ```bash

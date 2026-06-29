@@ -4,6 +4,8 @@
 //- #include "MidiClientUtil.h"
 //-only-file header //-
 #pragma once
+#include <memory>
+
 //- {include-header}
 #include "MidiClientItf.hpp" //- #include "MidiClientItf.h"
 
