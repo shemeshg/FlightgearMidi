@@ -12,9 +12,18 @@ template_dict = {
            "FETCH_CONTENT" : [{
                 "LIB":  "libremidi",
                 "GIT_REPOSITORY" : "https://github.com/celtera/libremidi" ,
-                "GIT_TAG" : "master"
-           }],
-           "FIND_BOOST": True
+                "GIT_TAG" : "master",
+                "target_link": "libremidi"
+           },
+           {
+                "LIB":  "sigslot",
+                "GIT_REPOSITORY" : "https://github.com/palacaze/sigslot" ,
+                "GIT_TAG" : "master",
+                "target_link": "Pal::Sigslot"
+           }           
+           
+           
+           ]
 
            }
 

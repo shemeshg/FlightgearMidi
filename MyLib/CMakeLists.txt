@@ -4,7 +4,6 @@
 # cog.outl(getCmake())
 # ]]]
 
-
 SET(GEN_HPP TRUE)
 if(GEN_HPP)
     make_directory(${CMAKE_CURRENT_BINARY_DIR}/hpp)
@@ -47,11 +46,12 @@ FetchContent_Declare(
     GIT_TAG        master
 )
 FetchContent_MakeAvailable(libremidi)
-
-cmake_policy(SET CMP0167 NEW)
-find_package(Boost REQUIRED)
-
-
+FetchContent_Declare(
+    sigslot
+    GIT_REPOSITORY https://github.com/palacaze/sigslot
+    GIT_TAG        master
+)
+FetchContent_MakeAvailable(sigslot)
 add_library(MyLib STATIC    
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/DataConfig.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/DataConfig.h
@@ -74,13 +74,9 @@ add_library(MyLib STATIC
     )
 set_target_properties(MyLib PROPERTIES LINKER_LANGUAGE CXX)
 
-target_link_libraries(MyLib PRIVATE libremidi)
+target_link_libraries(MyLib PUBLIC libremidi)
+target_link_libraries(MyLib PUBLIC Pal::Sigslot)
 target_include_directories(MyLib PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/hpp)
-
-target_link_libraries(MyLib PUBLIC Boost::boost)
-
-
-
 
 if(GEN_HPP)
   add_dependencies(MyLib runScript_b64fa7459a21b0f2b87477be85ed5180eac925e48113d35950b36e2777daa950)

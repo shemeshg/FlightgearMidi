@@ -21,7 +21,7 @@
 #include <condition_variable>
 #include <atomic>
 
-#include <boost/signals2.hpp>
+#include <sigslot/signal.hpp>
 
 #if defined(_WIN32)
     #include <winsock2.h>
@@ -41,7 +41,7 @@ class TelnetClient
 {
 
 public:
-    boost::signals2::signal<void(bool)> sigIsRunningChanged;
+    sigslot::signal<bool> sigIsRunningChanged;
 
     //- {fn}
     bool isRunning() const

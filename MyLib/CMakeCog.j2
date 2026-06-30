@@ -10,10 +10,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable({{comp.LIB}})
 {% endfor -%}
 
-{% if FIND_BOOST %}
-cmake_policy(SET CMP0167 NEW)
-find_package(Boost REQUIRED)
-{% endif %}
+
 
 add_library({{BIN_NAME}} STATIC    
     {% for comp in HPP_CPP_FILES -%}
@@ -26,16 +23,14 @@ add_library({{BIN_NAME}} STATIC
 set_target_properties({{BIN_NAME}} PROPERTIES LINKER_LANGUAGE CXX)
 
 {% for comp in FETCH_CONTENT -%}
-target_link_libraries({{BIN_NAME}} PRIVATE {{comp.LIB}})
+target_link_libraries({{BIN_NAME}} PUBLIC {{comp.target_link}})
 {% endfor -%}
 
 {% for comp in HPP_INCLUDE_PUBLIC_DIR -%}
     target_include_directories({{BIN_NAME}} PUBLIC {{ comp }})
 {% endfor -%}
 
-{% if FIND_BOOST %}
-target_link_libraries({{BIN_NAME}} PUBLIC Boost::boost)
-{% endif %}
+
 
 
 {{HPP_GEN_LINK}}
