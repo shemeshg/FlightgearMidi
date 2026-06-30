@@ -3,3 +3,7 @@
 **/.DS_Store
 **/.qtcreator/
 dist/
+CMakePresets.json
+CMakeUserPresets.json
+vcpkg-configuration.json
+vcpkg.json

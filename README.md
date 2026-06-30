@@ -68,14 +68,6 @@ cd build
 cmake ..
 make -j
 ```
-or
-
-```
-python3 -m venv .venv
-source .venv/bin/activate
-pip install build
-python -m build --wheel 
-```
 
 This produces a Python extension module:
 
@@ -84,6 +76,19 @@ FlightgearMidi.cpython-311-darwin.so
 ```
 
 (or similar, depending on your Python version)
+
+or compile using python
+
+```
+python3 -m venv .venv
+source .venv/bin/activate
+pip install build
+python -m build --wheel 
+cd dist
+pip install flightgearmidi-0.1.0-cp314-cp314-macosx_26_0_arm64.whl
+```
+
+
 
 ---
 
