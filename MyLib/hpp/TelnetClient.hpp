@@ -140,7 +140,7 @@ public:
         accumulated_line.clear();
 
         std::string cmd = trim_regex(rawCmd) + "\r\n";
-        send(sock_fd, cmd.c_str(), static_cast<int>(cmd.length()), 0);  // <-- FIX 2
+        send(sock_fd, cmd.c_str(), static_cast<int>(cmd.length()), 0);  
 
         auto timeout = std::chrono::seconds(3);
         bool success = data_cv.wait_for(lock, timeout, [this]()
