@@ -13,7 +13,7 @@ PYBIND11_MAKE_OPAQUE(std::vector<DataConfigMidiInput>);
 PYBIND11_MAKE_OPAQUE(std::vector<DataConfigFromMidiToTelnet>);
 PYBIND11_MAKE_OPAQUE(std::vector<DataConfigPullerFgKey>);
 
-PYBIND11_MODULE(MyLibPy, m)
+PYBIND11_MODULE(FlightgearMidi, m)
 {
     // Expose vectors so Python can append(), index, iterate, etc.
     py::bind_vector<std::vector<DataConfigMidiInput>>(m, "DataConfigMidiInputList");

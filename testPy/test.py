@@ -2,29 +2,29 @@ import sys
 import os
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-module_dir = os.path.join(script_dir, "..", "build", "MyLibPy")
+module_dir = os.path.join(script_dir, "..", "build", "FlightgearMidi")
 
-#sys.path.append("../build/MyLibPy")
+#sys.path.append("../build/FlightgearMidi")
 sys.path.append(module_dir)
 
-import MyLibPy
+import FlightgearMidi
 
 
 def loadConfigData():
-    cfg = MyLibPy.DataConfig()
+    cfg = FlightgearMidi.DataConfig()
     cfg.telnetHost = "localhost"
     #cfg.telnetHost = "ubuntumachine.local"
     cfg.telnetPort = "5500"
 
     # --- MIDI INPUT CONFIG ---
-    midi_input = MyLibPy.DataConfigMidiInput()
+    midi_input = FlightgearMidi.DataConfigMidiInput()
     midi_input.midiInputIdx = 0
     midi_input.midiInputName = "Launch Control XL"
 
     # Helper to reduce repetition
     def add_mapping(fromStart, fromEnd, toStart, toEnd,
                     msgType, channel, cc, cmd):
-        m = MyLibPy.DataConfigFromMidiToTelnet()
+        m = FlightgearMidi.DataConfigFromMidiToTelnet()
         m.fromStart = fromStart
         m.fromEnd = fromEnd
         m.toStart = toStart
@@ -38,47 +38,47 @@ def loadConfigData():
     # Throttle
     add_mapping(
         0, 127, 0, 1,
-        MyLibPy.MidiMsgType.CONTROL_CHANGE, -1, 77,
+        FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 77,
         "/controls/engines/engine[0]/throttle"
     )
 
     # Rudder
     add_mapping(
         0, 127, 1, -1,
-        MyLibPy.MidiMsgType.CONTROL_CHANGE, -1, 78,
+        FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 78,
         "/controls/flight/rudder"
     )
 
     # Aileron
     add_mapping(
         0, 127, 1, -1,
-        MyLibPy.MidiMsgType.CONTROL_CHANGE, -1, 79,
+        FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 79,
         "/controls/flight/aileron"
     )
 
     # Elevator
     add_mapping(
         0, 127, -1, 1,
-        MyLibPy.MidiMsgType.CONTROL_CHANGE, -1, 80,
+        FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 80,
         "/controls/flight/elevator"
     )
 
     # Mixture
     add_mapping(
         0, 127, 0, 1,
-        MyLibPy.MidiMsgType.CONTROL_CHANGE, -1, 84,
+        FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 84,
         "/controls/engines/current-engine/mixture"
     )
 
     cfg.dataConfigMidiInputs.append(midi_input)
 
     # --- FG PULLER KEYS ---
-    pull_throttle = MyLibPy.DataConfigPullerFgKey()
+    pull_throttle = FlightgearMidi.DataConfigPullerFgKey()
     pull_throttle.fgKetPath = "/controls/engines/engine[0]/throttle"
     #pull_throttle.callback = lambda key, val: print(f"my key {key} val {val}")
     cfg.dataConfigPullerFgKeys.append(pull_throttle)
 
-    pull_rudder = MyLibPy.DataConfigPullerFgKey()
+    pull_rudder = FlightgearMidi.DataConfigPullerFgKey()
     pull_rudder.fgKetPath = "/controls/flight/rudder"
     cfg.dataConfigPullerFgKeys.append(pull_rudder)
 
@@ -86,7 +86,7 @@ def loadConfigData():
 
 
 
-midi = MyLibPy.getMidiClientItf()
+midi = FlightgearMidi.getMidiClientItf()
 cfg = loadConfigData()
 midi.setDataConfig(cfg)
 cfg2 = midi.getDataConfig()

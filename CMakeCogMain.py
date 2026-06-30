@@ -5,7 +5,7 @@ template_dict = {
            "APP_VER": "0.1.0",
            "PROGRAM_NAME": "program-changer",
            "add_subdirectory_lib": ["MyLib"],
-           "add_subdirectory_header_only": ["MyLibPy"]
+           "add_subdirectory_header_only": ["FlightgearMidi"]
            }
 
 template_dict["add_subdirectory_lib_target"] = [os.path.basename(path) for path in template_dict["add_subdirectory_lib"]]

@@ -9,5 +9,6 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(pybind11)
 
-pybind11_add_module(MyLibPy MyLibPy.cpp)
-target_link_libraries(MyLibPy PRIVATE MyLib)  
+pybind11_add_module(FlightgearMidi FlightgearMidi.cpp)
+target_link_libraries(FlightgearMidi PRIVATE MyLib)  
+install(TARGETS FlightgearMidi DESTINATION FlightgearMidi)

@@ -68,11 +68,19 @@ cd build
 cmake ..
 make -j
 ```
+or
+
+```
+python3 -m venv .venv
+source .venv/bin/activate
+pip install build
+python -m build --wheel 
+```
 
 This produces a Python extension module:
 
 ```
-MyLibPy.cpython-311-darwin.so
+FlightgearMidi.cpython-311-darwin.so
 ```
 
 (or similar, depending on your Python version)
@@ -84,7 +92,7 @@ MyLibPy.cpython-311-darwin.so
 Option A — copy the module into your virtualenv:
 
 ```bash
-cp MyLibPy*.so ../.venv/lib/python3.11/site-packages/
+cp FlightgearMidi*.so ../.venv/lib/python3.11/site-packages/
 ```
 
 Option B — add the build directory to `sys.path` inside your script:
@@ -92,7 +100,7 @@ Option B — add the build directory to `sys.path` inside your script:
 ```python
 import sys
 sys.path.append("/path/to/FlightgearMidi/build")
-import MyLibPy
+import FlightgearMidi
 ```
 
 ---
@@ -129,7 +137,7 @@ The script builds a full configuration in Python:
 ### 1. Create the main config object
 
 ```python
-cfg = MyLibPy.DataConfig()
+cfg = FlightgearMidi.DataConfig()
 cfg.telnetHost = "localhost"
 cfg.telnetPort = "5500"
 ```
@@ -137,7 +145,7 @@ cfg.telnetPort = "5500"
 ### 2. Add a MIDI input device
 
 ```python
-midi_input = MyLibPy.DataConfigMidiInput()
+midi_input = FlightgearMidi.DataConfigMidiInput()
 midi_input.midiInputIdx = 0
 midi_input.midiInputName = "Launch Control XL"
 ```
@@ -155,12 +163,12 @@ Each mapping defines:
 Example:
 
 ```python
-mapping = MyLibPy.DataConfigFromMidiToTelnet()
+mapping = FlightgearMidi.DataConfigFromMidiToTelnet()
 mapping.fromStart = 0
 mapping.fromEnd = 127
 mapping.toStart = 0
 mapping.toEnd = 1
-mapping.midiMsgType = MyLibPy.MidiMsgType.CONTROL_CHANGE
+mapping.midiMsgType = FlightgearMidi.MidiMsgType.CONTROL_CHANGE
 mapping.notePitchOrCcChannel = 77
 mapping.setCmd = "/controls/engines/engine[0]/throttle"
 
@@ -170,7 +178,7 @@ midi_input.dataConfigFromMidiToTelnets.append(mapping)
 ### 4. Add FlightGear puller keys with Python callbacks
 
 ```python
-pull = MyLibPy.DataConfigPullerFgKey()
+pull = FlightgearMidi.DataConfigPullerFgKey()
 pull.fgKetPath = "/controls/flight/rudder"
 pull.callback = lambda key, val: print(f"FG update: {key} = {val}")
 
@@ -180,7 +188,7 @@ cfg.dataConfigPullerFgKeys.append(pull)
 ### 5. Send the config to the C++ backend
 
 ```python
-midi = MyLibPy.getMidiClientItf()
+midi = FlightgearMidi.getMidiClientItf()
 midi.setDataConfig(cfg)
 ```
 
@@ -204,7 +212,7 @@ The backend now:
 This project gives you a fast C++ backend with a clean Python API:
 
 - Build the module with CMake  
-- Import `MyLibPy` in Python  
+- Import `FlightgearMidi` in Python  
 - Construct your config  
 - Start the MIDI client  
 - Enjoy real‑time MIDI → FlightGear control  
