@@ -1,22 +1,39 @@
 //-define-file body hpp/TelnetClient.cpp
 //-define-file header hpp/TelnetClient.h
+
 //-only-file body //-
 //- #include "TelnetClient.h"
 #include <iostream>
 #include <chrono>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <netdb.h>
 #include <regex>
+
+#if defined(_WIN32)
+    #define CLOSESOCK closesocket
+#else
+    #define CLOSESOCK close
+#endif
+
 //-only-file header //-
 #pragma once
 #include <string>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <atomic>
 
 #include <boost/signals2.hpp>
+
+#if defined(_WIN32)
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    #pragma comment(lib, "ws2_32.lib")
+    typedef long ssize_t;   // <-- FIX 1: Windows lacks ssize_t
+#else
+    #include <sys/socket.h>
+    #include <arpa/inet.h>
+    #include <unistd.h>
+    #include <netdb.h>
+#endif
 
 //-only-file header
 //-var {PRE} "TelnetClient::"
@@ -59,6 +76,16 @@ public:
     //-only-file body
     {
         stop();
+
+#if defined(_WIN32)
+        WSADATA wsaData;
+        if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0)
+        {
+            std::cerr << "WSAStartup failed\n";
+            return false;
+        }
+#endif
+
         struct addrinfo hints{}, *res;
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_STREAM;
@@ -70,7 +97,12 @@ public:
         }
 
         sock_fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+
+#if defined(_WIN32)
+        if (sock_fd == INVALID_SOCKET)
+#else
         if (sock_fd < 0)
+#endif
         {
             std::cerr << "Socket creation failed\n";
             freeaddrinfo(res);
@@ -80,7 +112,13 @@ public:
         if (connect(sock_fd, res->ai_addr, res->ai_addrlen) < 0)
         {
             std::cerr << "Connection failed\n";
-            close(sock_fd);
+            CLOSESOCK(sock_fd);
+#if defined(_WIN32)
+            sock_fd = INVALID_SOCKET;
+            WSACleanup();
+#else
+            sock_fd = -1;
+#endif
             freeaddrinfo(res);
             return false;
         }
@@ -102,10 +140,8 @@ public:
         accumulated_line.clear();
 
         std::string cmd = trim_regex(rawCmd) + "\r\n";
-        // std::cerr << "[TX] " << cmd;
-        send(sock_fd, cmd.c_str(), cmd.length(), 0);
+        send(sock_fd, cmd.c_str(), static_cast<int>(cmd.length()), 0);  // <-- FIX 2
 
-        // Fail-safe wait limit: blocks for up to 3 seconds max
         auto timeout = std::chrono::seconds(3);
         bool success = data_cv.wait_for(lock, timeout, [this]()
                                         { return response_ready; });
@@ -113,7 +149,7 @@ public:
         if (!success)
         {
             std::cerr << "[TIMEOUT ERROR] FlightGear did not reply with a newline within 3 seconds.\n";
-            expecting_data = false; // Reset lock state
+            expecting_data = false;
             return "ERROR_TIMEOUT";
         }
 
@@ -132,7 +168,7 @@ public:
     //-only-file body
     {
         std::string s = cmd + "\r\n";
-        send(sock_fd, s.c_str(), s.length(), 0);
+        send(sock_fd, s.c_str(), static_cast<int>(s.length()), 0);  // <-- FIX 2
     }
 
     //- {fn}
@@ -140,7 +176,7 @@ public:
     //-only-file body
     {
         std::string cmd = "set " + path + " " + val + "\r\n";
-        send(sock_fd, cmd.c_str(), cmd.length(), 0);
+        send(sock_fd, cmd.c_str(), static_cast<int>(cmd.length()), 0);  // <-- FIX 2
     }
 
     //- {fn}
@@ -149,10 +185,21 @@ public:
     {
         setsRunning(false);
         std::cout << "In func stop()\n";
-        if (sock_fd != -1)
+        if (
+#if defined(_WIN32)
+            sock_fd != INVALID_SOCKET
+#else
+            sock_fd != -1
+#endif
+        )
         {
-            close(sock_fd);
+            CLOSESOCK(sock_fd);
+#if defined(_WIN32)
+            sock_fd = INVALID_SOCKET;
+            WSACleanup();
+#else
             sock_fd = -1;
+#endif
             std::cout << "In func stop() fd closed\n";
         }
         if (receiver_thread.joinable() && receiver_thread.get_id() != std::this_thread::get_id())
@@ -164,12 +211,16 @@ public:
     //-only-file header
 private:
     bool isTerminalDebugMode = false;
+
+#if defined(_WIN32)
+    SOCKET sock_fd = INVALID_SOCKET;
+#else
     int sock_fd = -1;
+#endif
 
     std::thread receiver_thread;
     std::atomic<bool> is_running{false};
 
-    // Synchronization variables
     std::mutex data_mutex;
     std::condition_variable data_cv;
     std::string latest_response;
@@ -185,8 +236,7 @@ private:
 
         while (is_running)
         {
-            // Read exactly 1 byte. This blocks until FlightGear sends *anything*
-            ssize_t bytes = recv(sock_fd, &buffer, 1, 0);
+            ssize_t bytes = recv(sock_fd, &buffer, 1, 0);  // <-- FIX 1 makes this valid
 
             if (bytes <= 0)
             {
@@ -195,41 +245,34 @@ private:
                 break;
             }
 
-            // 1. Force absolute instant terminal echoing (Bypasses stream lockups)
             if (isTerminalDebugMode) {
                 std::cout << buffer;
                 std::cout.flush();
             }
             
-
             {
                 std::lock_guard<std::mutex> lock(data_mutex);
                 if (expecting_data)
                 {
                     accumulated_line += buffer;
 
-                    // CHECK Condition A: FlightGear is in data mode and returned a clean line
-                    // bool found_newline = (accumulated_line.find('\n') != std::string::npos);
                     std::string lastLine;
 
-                    // Find last newline
                     std::size_t pos = accumulated_line.find_last_of("\r\n");
 
                     if (pos == std::string::npos)
                     {
-                        lastLine = accumulated_line; // only one line
+                        lastLine = accumulated_line;
                     }
                     else
                     {
                         lastLine = accumulated_line.substr(pos + 1);
                     }
 
-                    // Now check the pattern
                     bool found_prompt_no_data_mode =
                         !lastLine.empty() &&
                         lastLine.front() == '/' &&
                         lastLine.back() == '>';
-
 
                     bool found_prompt_data_mode = !accumulated_line.empty() &&
                                (accumulated_line.back() == '\n' ||
@@ -260,17 +303,13 @@ private:
 
         receiver_thread = std::thread(&TelnetClient::readServer, this);
 
-        // FIX: Wait a moment for FlightGear's initial welcoming burst to finish arriving
         std::cerr << "[INIT] Waiting for FlightGear login/telnet negotiation bytes...\n";
         std::this_thread::sleep_for(std::chrono::milliseconds(400));
 
-        
-        // Put FlightGear into data mode safely now that the stream is quiet
         std::cerr << "[INIT] Sending 'data\\r\\n' mode command to FlightGear...\n";
         std::string mode_cmd = "data\r\n";
-        send(sock_fd, mode_cmd.c_str(), mode_cmd.length(), 0);
+        send(sock_fd, mode_cmd.c_str(), static_cast<int>(mode_cmd.length()), 0);  // <-- FIX 2
 
-        // Give FlightGear a brief window to process the transition internally
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
         
     }
