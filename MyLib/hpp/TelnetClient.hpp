@@ -5,7 +5,6 @@
 //- #include "TelnetClient.h"
 #include <iostream>
 #include <chrono>
-#include <regex>
 
 #if defined(_WIN32)
     #define CLOSESOCK closesocket
@@ -139,7 +138,7 @@ public:
         latest_response.clear();
         accumulated_line.clear();
 
-        std::string cmd = trim_regex(rawCmd) + "\r\n";
+        std::string cmd = trim(rawCmd) + "\r\n";
         send(sock_fd, cmd.c_str(), static_cast<int>(cmd.length()), 0);  
 
         auto timeout = std::chrono::seconds(3);
@@ -153,7 +152,7 @@ public:
             return "ERROR_TIMEOUT";
         }
 
-        return latest_response;
+        return trim(latest_response);
     }
 
     //- {fn}
@@ -315,10 +314,15 @@ private:
     }
 
     //- {fn}
-    std::string trim_regex(const std::string &s)
+    std::string trim(const std::string &s)
     //-only-file body
     {
-        return std::regex_replace(s, std::regex(R"(^\s+|\s+$)"), "");
+        auto start = s.find_first_not_of(" \t\n\r\f\v");
+        if (start == std::string::npos)
+            return "";
+
+        auto end = s.find_last_not_of(" \t\n\r\f\v");
+        return s.substr(start, end - start + 1);
     }
 
     //-only-file header
