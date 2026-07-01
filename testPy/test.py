@@ -73,14 +73,14 @@ def loadConfigData():
     cfg.dataConfigMidiInputs.append(midi_input)
 
     # --- FG PULLER KEYS ---
-    pull_throttle = FlightgearMidi.DataConfigPullerFgKey()
-    pull_throttle.fgKetPath = "/controls/engines/engine[0]/throttle"
+    #pull_throttle = FlightgearMidi.DataConfigPullerFgKey()
+    #pull_throttle.fgKetPath = "/controls/engines/engine[0]/throttle"
     #pull_throttle.callback = lambda key, val: print(f"my key {key} val {val}")
-    cfg.dataConfigPullerFgKeys.append(pull_throttle)
+    #cfg.dataConfigPullerFgKeys.append(pull_throttle)
 
-    pull_rudder = FlightgearMidi.DataConfigPullerFgKey()
-    pull_rudder.fgKetPath = "/controls/flight/rudder"
-    cfg.dataConfigPullerFgKeys.append(pull_rudder)
+    #pull_rudder = FlightgearMidi.DataConfigPullerFgKey()
+    #pull_rudder.fgKetPath = "/controls/flight/rudder"
+    #cfg.dataConfigPullerFgKeys.append(pull_rudder)
 
     return cfg
 
