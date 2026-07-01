@@ -34,19 +34,6 @@ You need:
 - CMake (3.16+)
 - A C++17 compiler
 - Python 3.10+ (or your preferred version)
-- pybind11
-- boost
-
-On macOS:
-
-```bash
-brew install cmake pybind11 boost
-```
-
-on linux
-```bash
-sudo apt-get update && sudo apt-get install libboost-all-dev
-```
 
 
 Optional: create a virtual environment:
