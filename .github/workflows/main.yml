@@ -15,8 +15,12 @@ jobs:
           # Windows
           - os: windows-latest
             arch: AMD64
+            env:
+              CIBW_ENVIRONMENT: "CMAKE_ARGS='-DLIBREMIDI_NO_WINRT=ON'"            
           - os: windows-latest
             arch: ARM64
+            env:
+              CIBW_ENVIRONMENT: "CMAKE_ARGS='-DLIBREMIDI_NO_WINRT=ON'"            
 
           # Linux
           - os: ubuntu-latest
