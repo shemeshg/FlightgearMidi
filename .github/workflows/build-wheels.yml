@@ -35,8 +35,8 @@ jobs:
             python_arch: x64
             cibw_archs: x86_64
           - os_name: ubuntu-arm64
-            runs-on: ubuntu-24.04
-            python_arch: x64
+            runs-on: ubuntu-24.04-arm
+            python_arch: arm64
             cibw_archs: aarch64
           - os_name: macos
             runs-on: macos-14
@@ -96,6 +96,14 @@ jobs:
           CIBW_ARCHS_MACOS: ${{ matrix.cibw_archs }}
           CIBW_ARCHS_WINDOWS: ${{ matrix.cibw_archs }}
         run: python -m cibuildwheel --output-dir wheelhouse
+
+      - name: Show build architecture and wheel files
+        shell: bash
+        run: |
+          echo "Runner OS: $RUNNER_OS"
+          echo "Runner architecture: $(uname -m)"
+          echo "Python architecture: $(python -c 'import platform; print(platform.machine())')"
+          ls -la wheelhouse || true
 
       - name: Upload wheel artifacts
         uses: actions/upload-artifact@v4
