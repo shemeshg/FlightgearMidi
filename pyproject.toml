@@ -1,12 +1,18 @@
+# [[[cog
+# import cog
+# from pyprojectCog import getText
+# cog.outl(getText())
+# ]]]
 [build-system]
 requires = ["scikit-build-core>=0.11", "pybind11>=3.0"] # Changed from 3.9 to 3.0
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "FlightgearMidi"
-version = "0.2.0"
+version = "0.3.0"
 requires-python = ">=3.9" # This is where Python 3.9 actually belongs!
 
 [tool.scikit-build]
 cmake.build-type = "Release"
-wheel.packages = ["FlightgearMidi"]  # Bundles python folder
+wheel.packages = ["FlightgearMidi"]  # Bundles python folder 
+# [[[end]]]

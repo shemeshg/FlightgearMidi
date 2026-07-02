@@ -4,7 +4,7 @@
 # cog.outl(getCmake())
 # ]]]
 cmake_minimum_required(VERSION 3.15.0)
-project(program-changer VERSION 0.2.0 LANGUAGES C CXX)
+project(program-changer VERSION 0.3.0 LANGUAGES C CXX)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 

@@ -13,6 +13,7 @@ fi
 
 cd "$script_dir/.."
 cog -r CMakeLists.txt
+cog -r pyproject.toml
 
 cd "$script_dir/.."
 cd MyLib
