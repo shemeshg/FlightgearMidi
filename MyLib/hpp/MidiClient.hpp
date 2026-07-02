@@ -37,8 +37,6 @@ public:
             this->telnetDisconnected = true;
             } });
 
-
-            
         std::thread worker([this]()
                            {
             while (true) {                
@@ -54,15 +52,14 @@ public:
                 }
 
             } });
-            worker.detach();
-            
+        worker.detach();
     }
 
     //- {fn}
     void setIsTerminalDebugMode(bool bl) override
     //-only-file body
     {
-        telnetClient.setIsTerminalDebugMode(bl); 
+        telnetClient.setIsTerminalDebugMode(bl);
     }
 
     //- {fn}
@@ -73,10 +70,7 @@ public:
         {
             telnetClient.sendTerminalRaw(cmd);
         }
-       
     }
-
-    
 
     //- {fn}
     std::string sendTerminalCmd(std::string cmd) override
@@ -92,16 +86,15 @@ public:
         }
     }
 
-
     //- {function} 0 2
-    const DataConfig getDataConfig()  const override
+    const DataConfig getDataConfig() const override
     //-only-file body
     {
         return dataConfig;
     }
 
     //- {fn}
-    void setDataConfig(const DataConfig& cfg) override
+    void setDataConfig(const DataConfig &cfg) override
     //-only-file body
     {
         dataConfig = cfg;
@@ -126,7 +119,7 @@ public:
     //-only-file body
     {
         std::vector<std::string> names;
-        const auto& ports = obs.get_input_ports();
+        const auto &ports = obs.get_input_ports();
 
         names.reserve(ports.size());
 
@@ -134,21 +127,20 @@ public:
             ports.begin(),
             ports.end(),
             std::back_inserter(names),
-            [](const libremidi::input_port& port)
+            [](const libremidi::input_port &port)
             {
                 return port.display_name;
-            }
-        );
+            });
 
         return names;
     }
 
     //- {fn}
-    std::vector<std::string>  getOutPorts() override
+    std::vector<std::string> getOutPorts() override
     //-only-file body
     {
         std::vector<std::string> names;
-        const auto& ports = obs.get_output_ports();
+        const auto &ports = obs.get_output_ports();
 
         names.reserve(ports.size());
 
@@ -156,13 +148,12 @@ public:
             ports.begin(),
             ports.end(),
             std::back_inserter(names),
-            [](const libremidi::output_port& port)
+            [](const libremidi::output_port &port)
             {
                 return port.display_name;
-            }
-        );
+            });
 
-        return names;        
+        return names;
     }
 
     //- {function} 0 1
@@ -189,7 +180,7 @@ public:
     void startMidiClient() override
     //-only-file body
     {
-        
+
         telnetDisconnected = false;
         telnetClient.stop();
         if (!telnetClient.openSocket(dataConfig.telnetHost, dataConfig.telnetPort))
@@ -275,13 +266,14 @@ public:
     //-only-file header
 private:
     std::atomic<bool> telnetDisconnected = false;
-    libremidi::observer obs;
+    libremidi::observer obs{
+        libremidi::observer_configuration{
+            .track_virtual = true 
+        }};
 
     std::vector<LibreMidiInPort> libreMidiInPorts;
     TelnetClient telnetClient;
     DataConfig dataConfig{};
-
-
 
     //-only-file header
 };
