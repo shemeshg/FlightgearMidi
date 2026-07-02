@@ -25,16 +25,16 @@ jobs:
             python_arch: x64
             cibw_archs: AMD64
           - os_name: windows-arm
-            runs-on: windows-11-arm
-            python_arch: ARM64
+            runs-on: windows-2022
+            python_arch: x64
             cibw_archs: ARM64
           - os_name: ubuntu-amd64
             runs-on: ubuntu-24.04
             python_arch: x64
             cibw_archs: x86_64
           - os_name: ubuntu-arm64
-            runs-on: ubuntu-24.04-arm
-            python_arch: arm64
+            runs-on: ubuntu-24.04
+            python_arch: x64
             cibw_archs: aarch64
           - os_name: macos
             runs-on: macos-14
@@ -60,8 +60,8 @@ jobs:
       - name: Build wheels
         shell: bash
         env:
-          CIBW_BUILD: cp39-* cp310-* cp311-* cp312-* cp313-*
-          CIBW_SKIP: '*-musllinux_* *-manylinux_i686 *-win32'
+          CIBW_BUILD: cp311-*
+          CIBW_SKIP: '*-musllinux_* *-manylinux_i686 *-win32 *-pp* *-cp39-* *-cp310-* *-cp312-* *-cp313-*'
           CIBW_BUILD_FRONTEND: build
           CIBW_TEST_COMMAND: ''
           CIBW_ENVIRONMENT: CMAKE_BUILD_PARALLEL_LEVEL=4
@@ -69,6 +69,8 @@ jobs:
           CIBW_ARCHS_LINUX: ${{ matrix.cibw_archs }}
           CIBW_ARCHS_MACOS: ${{ matrix.cibw_archs }}
           CIBW_ARCHS_WINDOWS: ${{ matrix.cibw_archs }}
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
+          CIBW_MANYLINUX_AARCH64_IMAGE: manylinux_2_28
         run: python -m cibuildwheel --output-dir wheelhouse
 
       - name: Upload wheel artifacts

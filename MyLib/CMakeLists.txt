@@ -5,6 +5,8 @@
 # ]]]
 
 SET(GEN_HPP TRUE)
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
 if(GEN_HPP)
     make_directory(${CMAKE_CURRENT_BINARY_DIR}/hpp)
 
@@ -19,13 +21,13 @@ ${CMAKE_CURRENT_SOURCE_DIR}/hpp/MidiClientUtil.hpp
 ${CMAKE_CURRENT_SOURCE_DIR}/hpp/TelnetClient.hpp
     )
     add_custom_target(runScript_b64fa7459a21b0f2b87477be85ed5180eac925e48113d35950b36e2777daa950 ALL
-        COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/parseHpp.py ${HPP_GEN_FILES}
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/parseHpp.py ${HPP_GEN_FILES}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Running parseHpp shell script")
 
     # Run a shell script before everything else
     execute_process(
-        COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/parseHpp.py ${HPP_GEN_FILES}
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/parseHpp.py ${HPP_GEN_FILES}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         RESULT_VARIABLE result
     )
