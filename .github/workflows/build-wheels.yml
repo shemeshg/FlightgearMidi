@@ -70,7 +70,18 @@ jobs:
             libjack-jackd2-dev \
             libpipewire-0.3-dev
 
-      - name: Build wheels
+      - name: Build wheels on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          CMAKE_BUILD_PARALLEL_LEVEL: 4
+          PIP_DISABLE_PIP_VERSION_CHECK: 1
+        run: |
+          python -m pip install --upgrade build
+          python -m build --wheel --outdir wheelhouse
+
+      - name: Build wheels with cibuildwheel
+        if: runner.os != 'Linux'
         shell: bash
         env:
           CIBW_BUILD: cp311-*
@@ -82,8 +93,6 @@ jobs:
           CIBW_ARCHS_LINUX: ${{ matrix.cibw_archs }}
           CIBW_ARCHS_MACOS: ${{ matrix.cibw_archs }}
           CIBW_ARCHS_WINDOWS: ${{ matrix.cibw_archs }}
-          CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
-          CIBW_MANYLINUX_AARCH64_IMAGE: manylinux_2_28
         run: python -m cibuildwheel --output-dir wheelhouse
 
       - name: Upload wheel artifacts
