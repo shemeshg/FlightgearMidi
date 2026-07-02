@@ -74,6 +74,8 @@ endif()
         t: Template = Template("""
 SET(GEN_HPP TRUE)
 if(GEN_HPP)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+                               
     ${makeDirsStr}
 
 
@@ -82,13 +84,13 @@ if(GEN_HPP)
         ${hppGenFilesGlobesStr}
     )
     add_custom_target(${execJobId} ALL
-        COMMAND python3 ${parseHppPyPath} ${HPP_GEN_FILES}
+        COMMAND ${Python3_EXECUTABLE} ${parseHppPyPath} ${HPP_GEN_FILES}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Running parseHpp shell script")
 
     # Run a shell script before everything else
     execute_process(
-        COMMAND python3 ${parseHppPyPath} ${HPP_GEN_FILES}
+        COMMAND ${Python3_EXECUTABLE} ${parseHppPyPath} ${HPP_GEN_FILES}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         RESULT_VARIABLE result
     )
