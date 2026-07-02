@@ -5,6 +5,9 @@ This project provides a Python‑friendly interface for configuring MIDI input m
 The core logic is implemented in C++ for performance, and exposed to Python using **pybind11**.  
 You write your automation logic in Python — the C++ backend handles MIDI, telnet, and real‑time routing.
 
+Because of how Telnet communication works, it’s better to have two separate scripts: 
+one for sending events to FG and another for receiving them (if required).
+
 ---
 
 ## 📦 Features
