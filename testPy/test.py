@@ -19,8 +19,7 @@ def loadConfigData():
     # --- MIDI INPUT CONFIG ---
     midi_input = FlightgearMidi.DataConfigMidiInput()
     midi_input.midiInputIdx = 0
-    midi_input.midiInputName = "Launch Control XL"
-
+    midi_input.midiInputName = "Flightgear"
     # Helper to reduce repetition
     def add_mapping(fromStart, fromEnd, toStart, toEnd,
                     msgType, channel, cc, cmd):
