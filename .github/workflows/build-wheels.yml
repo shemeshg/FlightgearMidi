@@ -64,22 +64,13 @@ jobs:
             libjack-jackd2-dev \
             libpipewire-0.3-dev
 
-      - name: Build wheels on Linux
-        if: runner.os == 'Linux'
+      - name: Build wheels with cibuildwheel
         shell: bash
         env:
           CMAKE_BUILD_PARALLEL_LEVEL: 4
           PIP_DISABLE_PIP_VERSION_CHECK: 1
-        run: |
-          python -m pip install --upgrade build
-          python -m build --wheel --outdir wheelhouse
-
-      - name: Build wheels with cibuildwheel
-        if: runner.os != 'Linux'
-        shell: bash
-        env:
-          CIBW_BUILD: cp311-*
-          CIBW_SKIP: '*-musllinux_* *-manylinux_i686 *-win32 *-pp* *-cp39-* *-cp310-* *-cp312-* *-cp313-*'
+          CIBW_BUILD: cp311-* cp312-* cp313-* cp314-*
+          CIBW_SKIP: '*-musllinux_* *-manylinux_i686 *-win32 *-pp* *-cp39-* *-cp310-*'
           CIBW_BUILD_FRONTEND: build
           CIBW_TEST_COMMAND: ''
           CIBW_ENVIRONMENT: CMAKE_BUILD_PARALLEL_LEVEL=4
