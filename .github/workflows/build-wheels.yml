@@ -1,0 +1,99 @@
+name: Build Python wheels
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+
+jobs:
+  build-wheels:
+    name: Build wheels on ${{ matrix.os_name }}
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os_name: windows-amd64
+            runs-on: windows-2022
+            python_arch: x64
+            cibw_archs: AMD64
+          - os_name: windows-arm
+            runs-on: windows-11-arm
+            python_arch: ARM64
+            cibw_archs: ARM64
+          - os_name: ubuntu-amd64
+            runs-on: ubuntu-24.04
+            python_arch: x64
+            cibw_archs: x86_64
+          - os_name: ubuntu-arm64
+            runs-on: ubuntu-24.04-arm
+            python_arch: arm64
+            cibw_archs: aarch64
+          - os_name: macos
+            runs-on: macos-14
+            python_arch: arm64
+            cibw_archs: arm64
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          architecture: ${{ matrix.python_arch }}
+
+      - name: Install build tools
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build cibuildwheel cmake ninja
+
+      - name: Build wheels
+        shell: bash
+        env:
+          CIBW_BUILD: cp39-* cp310-* cp311-* cp312-* cp313-*
+          CIBW_SKIP: '*-musllinux_* *-manylinux_i686 *-win32'
+          CIBW_BUILD_FRONTEND: build
+          CIBW_TEST_COMMAND: ''
+          CIBW_ENVIRONMENT: CMAKE_BUILD_PARALLEL_LEVEL=4
+          CIBW_ARCHS: ${{ matrix.cibw_archs }}
+          CIBW_ARCHS_LINUX: ${{ matrix.cibw_archs }}
+          CIBW_ARCHS_MACOS: ${{ matrix.cibw_archs }}
+          CIBW_ARCHS_WINDOWS: ${{ matrix.cibw_archs }}
+        run: python -m cibuildwheel --output-dir wheelhouse
+
+      - name: Upload wheel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os_name }}
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+
+  release:
+    name: Publish wheels to GitHub Release
+    needs: build-wheels
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: wheels-*
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.whl
+          generate_release_notes: true
