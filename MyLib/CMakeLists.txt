@@ -6,8 +6,8 @@
 
 SET(GEN_HPP TRUE)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
-
-if(GEN_HPP)
+if(GEN_HPP)    
+                               
     make_directory(${CMAKE_CURRENT_BINARY_DIR}/hpp)
 
 

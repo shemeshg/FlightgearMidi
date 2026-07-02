@@ -73,8 +73,8 @@ endif()
 
         t: Template = Template("""
 SET(GEN_HPP TRUE)
-if(GEN_HPP)
-    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+if(GEN_HPP)    
                                
     ${makeDirsStr}
 
