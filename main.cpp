@@ -2,7 +2,6 @@
 #include "DataConfig.h"
 #include <iostream>
 
-
     DataConfig loadConfigData()
     {
         DataConfig dataConfig = DataConfig{};
