@@ -16,7 +16,7 @@
 class MidiClientItf
 {
 public:
-    virtual void startMidiClient() = 0;
+    virtual bool startMidiClient() = 0;
     virtual std::vector<std::string>  getInPorts() = 0;
     virtual std::vector<std::string>  getOutPorts() = 0;
     virtual bool getIsTelnetDisconnectedSignal() = 0;

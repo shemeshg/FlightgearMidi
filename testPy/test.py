@@ -98,7 +98,8 @@ print()
 terminal_mode = False
 
 try:
-    midi.startMidiClient()
+    if (not midi.startMidiClient()):
+        exit(1)
 
     while True:
         if midi.getIsTelnetRunning():

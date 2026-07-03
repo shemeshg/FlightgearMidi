@@ -177,7 +177,7 @@ public:
     }
 
     //- {fn}
-    void startMidiClient() override
+    bool startMidiClient() override
     //-only-file body
     {
 
@@ -186,7 +186,7 @@ public:
         if (!telnetClient.openSocket(dataConfig.telnetHost, dataConfig.telnetPort))
         {
             std::cout << "Telnet server - could not connect!" << std::endl;
-            return;
+            return false;
         }
 
         libreMidiInPorts.clear();
@@ -202,7 +202,7 @@ public:
             else
             {
                 std::cout << "Port not found!" << std::endl;
-                return;
+                return false;
             }
 
             // For now midiInput by copy until config moved to class variarble
@@ -231,6 +231,7 @@ public:
             lmip.open();
             libreMidiInPorts.push_back(std::move(lmip));
         }
+        return true;
     }
 
     //- {fn}
