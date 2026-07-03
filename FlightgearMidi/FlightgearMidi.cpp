@@ -37,7 +37,9 @@ PYBIND11_MODULE(FlightgearMidi, m)
         .def("getOutPorts", &MidiClientItf::getOutPorts)
         .def("setIsTerminalDebugMode", &MidiClientItf::setIsTerminalDebugMode)
         .def("sendTerminalRaw", &MidiClientItf::sendTerminalRaw)
-        .def("getIsTelnetDisconnectedSignal", &MidiClientItf::getIsTelnetDisconnectedSignal);
+        .def("getIsTelnetDisconnectedSignal", &MidiClientItf::getIsTelnetDisconnectedSignal)
+        .def_readwrite("pullerSleepInterval", &MidiClientItf::pullerSleepInterval)        
+        ;
 
     // Enum
     py::enum_<MidiMsgType>(m, "MidiMsgType")

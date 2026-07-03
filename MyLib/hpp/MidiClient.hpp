@@ -26,6 +26,8 @@
 class MidiClient : public MidiClientItf
 {
 public:
+    
+
     //- {function} 0 1
     explicit MidiClient()
     //-only-file body
@@ -48,7 +50,10 @@ public:
                         }                        
                     }
                     
-                    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                    if (pullerSleepInterval != 0){
+                        std::this_thread::sleep_for(std::chrono::milliseconds(pullerSleepInterval));
+                    }
+                    
                 }
 
             } });
