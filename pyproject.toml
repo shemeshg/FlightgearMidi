@@ -9,7 +9,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "FlightgearMidi"
-version = "0.4.0"
+version = "0.5.0"
 requires-python = ">=3.9" # This is where Python 3.9 actually belongs!
 
 [tool.scikit-build]
