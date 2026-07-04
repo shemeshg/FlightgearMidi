@@ -33,19 +33,47 @@ novation_color_amber_blink = 59
 # midio bug can list virtual ports but not send to
 hw_midi_outport = mido.open_output("Launch Control XL")
 # rottery leds are 13 + row_offset + 16 * column_offset
-# btn leds are 42..45 57..60
+# btn leds are 41..44 57..60
 # btn leds are 73..76 89..92
-# btn leds vert selectors 105..108
-novation_flaps_led_id = 13 + 0 + 16 * 0
 
+novation_flaps_led_id = 13 + 0 + 16 * 0
+novation_air_speed_id = 73
 msg = mido.Message('note_on', note=novation_flaps_led_id, velocity=novation_color_off, channel=0)
+msg = mido.Message('note_on', note=novation_air_speed_id, velocity=novation_color_off, channel=0)
+
+previous_air_speed_state = None
+def pull_indicated_air_speed_callback(key, val):    
+    try:
+        val = float(val)
+    except (ValueError, TypeError):
+        return
+    global previous_air_speed_state 
+
+    current_air_speed_state = novation_color_off
+    if val > 70:
+        current_air_speed_state = novation_color_off
+    elif val >= 50:
+        current_air_speed_state = novation_color_green
+    elif val >= 40:
+        current_air_speed_state = novation_color_yellow    
+    else:
+        current_air_speed_state = novation_color_red
+        
+    if current_air_speed_state != previous_air_speed_state:
+        previous_air_speed_state = current_air_speed_state
+        msg = mido.Message('note_on', note=novation_air_speed_id, velocity=current_air_speed_state, channel=0)
+        hw_midi_outport.send(msg)
+
+
+
+
+
 
 def flaps_on_callback(key, val):
     try:
         val = float(val)
     except (ValueError, TypeError):
         return
-                
     if val > 0.9:
         msg = mido.Message('note_on', note=novation_flaps_led_id, velocity=novation_color_red, channel=0)
         hw_midi_outport.send(msg)
@@ -136,6 +164,10 @@ def loadConfigData():
     pull_flaps.callback = flaps_on_callback
     cfg.dataConfigPullerFgKeys.append(pull_flaps)
     
+    pull_indicated_air_speed = FlightgearMidi.DataConfigPullerFgKey()
+    pull_indicated_air_speed.fgKetPath = "/instrumentation/airspeed-indicator/indicated-speed-kt"
+    pull_indicated_air_speed.callback = pull_indicated_air_speed_callback
+    cfg.dataConfigPullerFgKeys.append(pull_indicated_air_speed)    
 
     return cfg
 
