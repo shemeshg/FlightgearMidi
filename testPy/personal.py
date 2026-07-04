@@ -13,14 +13,18 @@ import mido
 #exit(0)
 
 novation_color_off = 12
+
 novation_color_red_dim = 13
 novation_color_red = 15
 novation_color_red_blink = 11
+
 novation_color_yellow = 62
 novation_color_yellow_blink = 58
+
 novation_color_green_dim = 28
 novation_color_green = 60
 novation_color_green_blink = 56
+
 novation_color_amber_dim = 29
 novation_color_amber = 63
 novation_color_amber_blink = 59
@@ -28,7 +32,12 @@ novation_color_amber_blink = 59
 
 # midio bug can list virtual ports but not send to
 hw_midi_outport = mido.open_output("Launch Control XL")
-novation_flaps_led_id = 13
+# rottery leds are 13 + row_offset + 16 * column_offset
+# btn leds are 42..45 57..60
+# btn leds are 73..76 89..92
+# btn leds vert selectors 105..108
+novation_flaps_led_id = 13 + 0 + 16 * 0
+
 msg = mido.Message('note_on', note=novation_flaps_led_id, velocity=novation_color_off, channel=0)
 
 def flaps_on_callback(key, val):
