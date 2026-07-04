@@ -16,6 +16,8 @@ novation_color_red = 15
 novation_color_yellow = 62
 novation_color_green = 60
 hw_midi_outport = mido.open_output("Launch Control XL")
+novation_flaps_led_id = 13
+msg = mido.Message('note_on', note=novation_flaps_led_id, velocity=novation_color_off, channel=0)
 
 def flaps_on_callback(key, val):
     try:
@@ -24,16 +26,16 @@ def flaps_on_callback(key, val):
         return
                 
     if val > 0.9:
-        msg = mido.Message('note_on', note=13, velocity=novation_color_red, channel=0)
+        msg = mido.Message('note_on', note=novation_flaps_led_id, velocity=novation_color_red, channel=0)
         hw_midi_outport.send(msg)
     elif val >= 0.6:
-        msg = mido.Message('note_on', note=13, velocity=novation_color_yellow, channel=0)
+        msg = mido.Message('note_on', note=novation_flaps_led_id, velocity=novation_color_yellow, channel=0)
         hw_midi_outport.send(msg)
     elif val >= 0.1:
-        msg = mido.Message('note_on', note=13, velocity=novation_color_green, channel=0)
+        msg = mido.Message('note_on', note=novation_flaps_led_id, velocity=novation_color_green, channel=0)
         hw_midi_outport.send(msg)
     else:
-        msg = mido.Message('note_on', note=13, velocity=novation_color_off, channel=0)
+        msg = mido.Message('note_on', note=novation_flaps_led_id, velocity=novation_color_off, channel=0)
         hw_midi_outport.send(msg)
 
 def loadConfigData():
