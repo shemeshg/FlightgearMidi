@@ -40,6 +40,7 @@ def flaps_on_callback(key, val):
 
 def loadConfigData():
     cfg = FlightgearMidi.DataConfig()
+    
     cfg.telnetHost = "localhost"
     #cfg.telnetHost = "ubuntumachine.local"
     cfg.telnetPort = "5500"
@@ -120,6 +121,7 @@ def loadConfigData():
 
 
 midi = FlightgearMidi.getMidiClientItf()
+midi.pullerSleepInterval = 200
 cfg = loadConfigData()
 midi.setDataConfig(cfg)
 cfg2 = midi.getDataConfig()
