@@ -8,6 +8,14 @@ module_dir = os.path.join(script_dir, "..", "build", "FlightgearMidi")
 sys.path.append(module_dir)
 
 import FlightgearMidi
+import mido
+
+
+novation_color_off = 12
+novation_color_red = 15
+novation_color_yellow = 62
+novation_color_green = 60
+hw_midi_outport = mido.open_output("Launch Control XL")
 
 def flaps_on_callback(key, val):
     try:
@@ -16,25 +24,17 @@ def flaps_on_callback(key, val):
         return
                 
     if val > 0.9:
-        print("30%")
+        msg = mido.Message('note_on', note=13, velocity=novation_color_red, channel=0)
+        hw_midi_outport.send(msg)
     elif val >= 0.6:
-        print("20%")
+        msg = mido.Message('note_on', note=13, velocity=novation_color_yellow, channel=0)
+        hw_midi_outport.send(msg)
     elif val >= 0.1:
-        print("10%")
+        msg = mido.Message('note_on', note=13, velocity=novation_color_green, channel=0)
+        hw_midi_outport.send(msg)
     else:
-        print("0%")
-
-    #if val:
-    #    for vel in range(4,5):
-    #        msg = mido.Message('note_on', note=13, velocity=vel, channel=0)
-    #        outport.send(msg)
-    #    print("Send LED OFF")
-    #else:
-    #    for vel in range(3,4):
-    #        msg = mido.Message('note_on', note=13, velocity=vel, channel=0)
-    #        outport.send(msg)
-    #    print("Send LED ON")
-
+        msg = mido.Message('note_on', note=13, velocity=novation_color_off, channel=0)
+        hw_midi_outport.send(msg)
 
 def loadConfigData():
     cfg = FlightgearMidi.DataConfig()

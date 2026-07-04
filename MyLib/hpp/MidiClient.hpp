@@ -7,6 +7,7 @@
 #include <cmath>
 #include <string>
 #include <iostream>
+#include <unordered_map>
 
 //-only-file header //-
 #pragma once
@@ -26,8 +27,6 @@
 class MidiClient : public MidiClientItf
 {
 public:
-    
-
     //- {function} 0 1
     explicit MidiClient()
     //-only-file body
@@ -46,7 +45,10 @@ public:
                     if (!telnetClient.getIsTerminalDebugMode()){
                         for(const auto &puller: dataConfig.dataConfigPullerFgKeys){                            
                             std::string pullVal = telnetClient.getValue(puller.fgKetPath);
-                            puller.callback(puller.fgKetPath, pullVal);
+                            if (isPullerUnoderedMapValueChanged(puller.fgKetPath, pullVal)){
+                                puller.callback(puller.fgKetPath, pullVal);
+                            }
+                            
                         }                        
                     }
                     
@@ -161,26 +163,6 @@ public:
         return names;
     }
 
-    //- {function} 0 1
-    std::optional<libremidi::input_port> getInPortByName(std::string portName, int idx = 0)
-    //-only-file body
-    {
-        int foundItems = 0;
-
-        for (const libremidi::input_port &port : obs.get_input_ports())
-        {
-            if (port.display_name == portName)
-            {
-                if (idx == foundItems)
-                {
-                    return port;
-                }
-                foundItems++;
-            }
-        }
-        return std::nullopt;
-    }
-
     //- {fn}
     bool startMidiClient() override
     //-only-file body
@@ -239,6 +221,41 @@ public:
         return true;
     }
 
+
+
+    //-only-file header
+private:
+    std::atomic<bool> telnetDisconnected = false;
+    libremidi::observer obs{
+        libremidi::observer_configuration{
+            .track_virtual = true}};
+
+    std::vector<LibreMidiInPort> libreMidiInPorts;
+    TelnetClient telnetClient;
+    DataConfig dataConfig{};
+
+    std::unordered_map<std::string, std::string> pullerCashMap;
+
+    //- {fn}
+    bool isPullerUnoderedMapValueChanged(std::string key, std::string newVal)
+    //-only-file body
+    {
+        auto it = pullerCashMap.find(key);
+
+        if (it != pullerCashMap.end())
+        {
+            if (it->second != newVal)
+            {
+                it->second = newVal;
+                return true;
+            }
+            return false;
+        }
+
+        pullerCashMap[key] = newVal;
+        return true;
+    }
+
     //- {fn}
     double translateClamped(double value,
                             double fromStart, double fromEnd,
@@ -269,17 +286,25 @@ public:
         return s;
     }
 
-    //-only-file header
-private:
-    std::atomic<bool> telnetDisconnected = false;
-    libremidi::observer obs{
-        libremidi::observer_configuration{
-            .track_virtual = true 
-        }};
+    //- {function} 0 1
+    std::optional<libremidi::input_port> getInPortByName(std::string portName, int idx = 0)
+    //-only-file body
+    {
+        int foundItems = 0;
 
-    std::vector<LibreMidiInPort> libreMidiInPorts;
-    TelnetClient telnetClient;
-    DataConfig dataConfig{};
+        for (const libremidi::input_port &port : obs.get_input_ports())
+        {
+            if (port.display_name == portName)
+            {
+                if (idx == foundItems)
+                {
+                    return port;
+                }
+                foundItems++;
+            }
+        }
+        return std::nullopt;
+    }
 
     //-only-file header
 };
