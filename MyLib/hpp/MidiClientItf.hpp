@@ -28,5 +28,7 @@ public:
     virtual const DataConfig getDataConfig() const = 0;
     virtual void setDataConfig(const DataConfig& cfg) = 0;    
 
+    virtual bool testSendNotesOn() =0;
+
     virtual ~MidiClientItf() = default;
 };

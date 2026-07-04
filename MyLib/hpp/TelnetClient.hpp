@@ -183,7 +183,6 @@ public:
     //-only-file body
     {
         setsRunning(false);
-        std::cout << "In func stop()\n";
         if (
 #if defined(_WIN32)
             sock_fd != INVALID_SOCKET
@@ -199,7 +198,6 @@ public:
 #else
             sock_fd = -1;
 #endif
-            std::cout << "In func stop() fd closed\n";
         }
         if (receiver_thread.joinable() && receiver_thread.get_id() != std::this_thread::get_id())
         {

@@ -18,6 +18,8 @@
 //- {include-header}
 #include "LibreMidiInPort.hpp" //- #include "LibreMidiInPort.h"
 //- {include-header}
+#include "LibreMidiOutPort.hpp" //- #include "LibreMidiOutPort.h"
+//- {include-header}
 #include "TelnetClient.hpp" //- #include "TelnetClient.h"
 //- {include-header}
 #include "DataConfig.hpp" //- #include "DataConfig.h"
@@ -164,6 +166,36 @@ public:
     }
 
     //- {fn}
+    bool testSendNotesOn() override
+    //-only-file body
+    {
+        std::string midiOutputName = "Flightgear";
+        int midiOutputIdx = 0;
+        auto port = getOutPortByName(midiOutputName, midiOutputIdx);
+        if (port)
+        {
+            std::cout << "Found port: " << port->display_name << std::endl;
+        }
+        else
+        {
+            std::cout << "Port not found!" << std::endl;
+            return false;
+        }
+
+        libremidi::midi_out midi{
+            libremidi::output_configuration{}};
+
+        LibreMidiOutPort lmop{std::move(midiOutputName), midiOutputIdx, std::move(midi), std::move(port.value())};
+        lmop.open();
+        
+        lmop.test();
+        libreMidiOutPorts.push_back(std::move(lmop));
+
+        std::cout << "Test successfull\n";
+        return true;
+    }
+
+    //- {fn}
     bool startMidiClient() override
     //-only-file body
     {
@@ -221,8 +253,6 @@ public:
         return true;
     }
 
-
-
     //-only-file header
 private:
     std::atomic<bool> telnetDisconnected = false;
@@ -231,6 +261,7 @@ private:
             .track_virtual = true}};
 
     std::vector<LibreMidiInPort> libreMidiInPorts;
+    std::vector<LibreMidiOutPort> libreMidiOutPorts;
     TelnetClient telnetClient;
     DataConfig dataConfig{};
 
@@ -284,6 +315,26 @@ private:
             s.pop_back();
 
         return s;
+    }
+
+    //- {function} 0 1
+    std::optional<libremidi::output_port> getOutPortByName(std::string portName, int idx = 0)
+    //-only-file body
+    {
+        int foundItems = 0;
+
+        for (const libremidi::output_port &port : obs.get_output_ports())
+        {
+            if (port.display_name == portName)
+            {
+                if (idx == foundItems)
+                {
+                    return port;
+                }
+                foundItems++;
+            }
+        }
+        return std::nullopt;
     }
 
     //- {function} 0 1

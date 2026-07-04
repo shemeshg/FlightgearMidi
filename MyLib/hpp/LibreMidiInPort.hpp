@@ -31,6 +31,7 @@ public:
         {
             err.throw_exception();
         }
+        isOpened = true;
     }
 
     //-only-file header
@@ -42,8 +43,13 @@ public:
         return portIdx;
     }
 
+    const int getIsOpened() const {
+        return isOpened;
+    }
+
     
 private:
+    bool isOpened = false;
     std::string portName;
     int portIdx;
     libremidi::midi_in midiIn;
