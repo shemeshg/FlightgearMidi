@@ -39,7 +39,9 @@ hw_midi_outport = mido.open_output("Launch Control XL")
 novation_flaps_led_id = 13 + 0 + 16 * 0
 novation_air_speed_id = 73
 msg = mido.Message('note_on', note=novation_flaps_led_id, velocity=novation_color_off, channel=0)
+hw_midi_outport.send(msg)
 msg = mido.Message('note_on', note=novation_air_speed_id, velocity=novation_color_off, channel=0)
+hw_midi_outport.send(msg)
 
 previous_air_speed_state = None
 def pull_indicated_air_speed_callback(key, val):    
