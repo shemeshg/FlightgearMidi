@@ -9,12 +9,14 @@ sys.path.append(module_dir)
 
 import FlightgearMidi
 import mido
-
+#print(mido.get_output_names())
+#exit(0)
 
 novation_color_off = 12
 novation_color_red = 15
 novation_color_yellow = 62
 novation_color_green = 60
+# midio bug can list virtual ports but not send to
 hw_midi_outport = mido.open_output("Launch Control XL")
 novation_flaps_led_id = 13
 msg = mido.Message('note_on', note=novation_flaps_led_id, velocity=novation_color_off, channel=0)
