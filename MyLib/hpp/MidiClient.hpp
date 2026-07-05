@@ -166,12 +166,30 @@ public:
     }
 
     //- {fn}
-    bool testSendNotesOn() override
+    LibreMidiOutPort *getLibreMidiOutPort(std::string midiOutputName, int midiOutputIdx) override
     //-only-file body
     {
-        std::string midiOutputName = "Flightgear";
-        int midiOutputIdx = 0;
+        auto it = std::find_if(
+            libreMidiOutPorts.begin(),
+            libreMidiOutPorts.end(),
+            [midiOutputIdx, &midiOutputName](const LibreMidiOutPort &port)
+            {
+                return port.getPortIdx() == midiOutputIdx &&
+                       port.getPortName() == midiOutputName;
+            });
 
+        if (it == libreMidiOutPorts.end())
+        {
+            throw std::runtime_error("Out Port not found");
+        }
+
+        return &*it; // return reference to existing object
+    }
+
+    //- {fn}
+    bool openLibreMidiOutPort(std::string midiOutputName, int midiOutputIdx) override
+    //-only-file body
+    {
         auto it = std::find_if(
             libreMidiOutPorts.begin(),
             libreMidiOutPorts.end(),
@@ -199,16 +217,9 @@ public:
 
             LibreMidiOutPort lmop{std::move(midiOutputName), midiOutputIdx, std::move(midi), std::move(port.value())};
             lmop.open();
-            lmop.test();
-            libreMidiOutPorts.push_back(std::move(lmop));            
-        } else {
-            std::cout<<"cashed object\n";
-            it->test();
+            libreMidiOutPorts.push_back(std::move(lmop));
         }
 
-
-
-        std::cout << "Test successfull\n";
         return true;
     }
 

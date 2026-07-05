@@ -10,6 +10,8 @@
 
 //- {include-header}
 #include "DataConfig.hpp" //- #include "DataConfig.h"
+//- {include-header}
+#include "LibreMidiOutPort.hpp" //- #include "LibreMidiOutPort.h"
 
 //-only-file header
 //-var {PRE} "MidiClientItf::"
@@ -28,7 +30,7 @@ public:
     virtual const DataConfig getDataConfig() const = 0;
     virtual void setDataConfig(const DataConfig& cfg) = 0;    
 
-    virtual bool testSendNotesOn() =0;
-
+    virtual bool openLibreMidiOutPort(std::string midiOutputName, int midiOutputIdx) =0;
+    virtual LibreMidiOutPort *getLibreMidiOutPort(std::string midiOutputName, int midiOutputIdx) =0;
     virtual ~MidiClientItf() = default;
 };
