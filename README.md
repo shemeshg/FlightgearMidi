@@ -199,6 +199,7 @@ midi.startMidiClient()
 ```python
 if not midi.openLibreMidiOutPort("Flightgear",0):
     print("Forgot to create virtual port")
+    print("out ports:\n" + "\n".join(" " + p for p in midi.getOutPorts()))
     exit(0)
 
 midiOutPort = midi.getLibreMidiOutPort("Flightgear",0)
