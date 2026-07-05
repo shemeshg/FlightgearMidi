@@ -171,25 +171,42 @@ public:
     {
         std::string midiOutputName = "Flightgear";
         int midiOutputIdx = 0;
-        auto port = getOutPortByName(midiOutputName, midiOutputIdx);
-        if (port)
+
+        auto it = std::find_if(
+            libreMidiOutPorts.begin(),
+            libreMidiOutPorts.end(),
+            [midiOutputIdx, &midiOutputName](const LibreMidiOutPort &port)
+            {
+                return port.getPortIdx() == midiOutputIdx &&
+                       port.getPortName() == midiOutputName;
+            });
+
+        if (it == libreMidiOutPorts.end())
         {
-            std::cout << "Found port: " << port->display_name << std::endl;
-        }
-        else
-        {
-            std::cout << "Port not found!" << std::endl;
-            return false;
+            auto port = getOutPortByName(midiOutputName, midiOutputIdx);
+            if (port)
+            {
+                std::cout << "Found port: " << port->display_name << std::endl;
+            }
+            else
+            {
+                std::cout << "Port not found!" << std::endl;
+                return false;
+            }
+
+            libremidi::midi_out midi{
+                libremidi::output_configuration{}};
+
+            LibreMidiOutPort lmop{std::move(midiOutputName), midiOutputIdx, std::move(midi), std::move(port.value())};
+            lmop.open();
+            lmop.test();
+            libreMidiOutPorts.push_back(std::move(lmop));            
+        } else {
+            std::cout<<"cashed object\n";
+            it->test();
         }
 
-        libremidi::midi_out midi{
-            libremidi::output_configuration{}};
 
-        LibreMidiOutPort lmop{std::move(midiOutputName), midiOutputIdx, std::move(midi), std::move(port.value())};
-        lmop.open();
-        
-        lmop.test();
-        libreMidiOutPorts.push_back(std::move(lmop));
 
         std::cout << "Test successfull\n";
         return true;

@@ -168,5 +168,6 @@ int main(int argc, char *argv[])
 {
     auto midiItf = getMidiClientItf();
     midiItf->testSendNotesOn();
+    midiItf->testSendNotesOn();
     return 0;
 }
