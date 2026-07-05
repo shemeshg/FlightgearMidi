@@ -27,6 +27,11 @@ PYBIND11_MODULE(FlightgearMidi, m)
         .def("get_cmd", &TelnetClient::getCmd)
         .def("stop", &TelnetClient::stop);
 
+    //LibreMidiOutPort
+    py::class_<LibreMidiOutPort>(m, "LibreMidiOutPort")
+        .def("test", &LibreMidiOutPort::test)
+            ;    
+
     // MidiClientItf
     py::class_<MidiClientItf, std::shared_ptr<MidiClientItf>>(m, "MidiClientItf")
         .def("getDataConfig", &MidiClientItf::getDataConfig)
@@ -38,7 +43,10 @@ PYBIND11_MODULE(FlightgearMidi, m)
         .def("setIsTerminalDebugMode", &MidiClientItf::setIsTerminalDebugMode)
         .def("sendTerminalRaw", &MidiClientItf::sendTerminalRaw)
         .def("getIsTelnetDisconnectedSignal", &MidiClientItf::getIsTelnetDisconnectedSignal)
-        .def_readwrite("pullerSleepInterval", &MidiClientItf::pullerSleepInterval)        
+        .def("getLibreMidiOutPort", &MidiClientItf::getLibreMidiOutPort,
+             py::return_value_policy::reference_internal)
+        .def("openLibreMidiOutPort", &MidiClientItf::openLibreMidiOutPort)
+        .def_readwrite("pullerSleepInterval", &MidiClientItf::pullerSleepInterval)
         ;
 
     // Enum
@@ -72,15 +80,14 @@ PYBIND11_MODULE(FlightgearMidi, m)
         .def_readwrite("fgKetPath", &DataConfigPullerFgKey::fgKetPath)
         .def_property(
             "callback",
-            [](DataConfigPullerFgKey &self) {
+            [](DataConfigPullerFgKey &self)
+            {
                 return self.callback;
             },
-            [](DataConfigPullerFgKey &self, std::function<void(std::string, std::string)> cb) {
+            [](DataConfigPullerFgKey &self, std::function<void(std::string, std::string)> cb)
+            {
                 self.callback = cb;
-            }
-        )
-        ;
-
+            });
 
     // DataConfig
     py::class_<DataConfig>(m, "DataConfig")
