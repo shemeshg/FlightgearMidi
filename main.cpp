@@ -164,14 +164,18 @@ int runFlightGearClient()
     return 0;
 }
 
-int main(int argc, char *argv[])
-{
+int testSendMidi(){
     auto midiItf = getMidiClientItf();
     if (!midiItf->openLibreMidiOutPort("Flightgear",0)){
         std::cout<<"Main Could not open port\n";
         return 0;
     }
     auto l = midiItf->getLibreMidiOutPort("Flightgear",0);
-    l->test();
+    l->sendNoteOn(0,60,60);
     return 0;
+}
+
+int main(int argc, char *argv[])
+{
+    runFlightGearClient();
 }

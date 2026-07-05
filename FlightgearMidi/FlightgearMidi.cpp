@@ -29,7 +29,9 @@ PYBIND11_MODULE(FlightgearMidi, m)
 
     //LibreMidiOutPort
     py::class_<LibreMidiOutPort>(m, "LibreMidiOutPort")
-        .def("test", &LibreMidiOutPort::test)
+        .def("sendNoteOn", &LibreMidiOutPort::sendNoteOn)
+        .def("sendNoteOn", &LibreMidiOutPort::sendNoteOff)
+        .def("sendNoteOn", &LibreMidiOutPort::sendControlChange)
             ;    
 
     // MidiClientItf

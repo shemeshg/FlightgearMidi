@@ -12,12 +12,12 @@
 class LibreMidiOutPort
 {
 public:
-     //- {function} 0 0
+    //- {function} 0 0
     LibreMidiOutPort(std::string name, int idx, libremidi::midi_out midi, libremidi::output_port outPort)
-    //-only-file body
+        //-only-file body
         : portName(std::move(name)),
           portIdx(idx), midiOut(std::move(midi)),
-          outPort{std::move(outPort)}    
+          outPort{std::move(outPort)}
     {
     }
 
@@ -34,28 +34,43 @@ public:
         isOpened = true;
     }
 
+    //- {fn}
+    void sendNoteOn(int channel, int note, int velocity)
+    //-only-file body
+    {
+        midiOut.send_message(libremidi::channel_events::note_on(channel, note, velocity));
+    }
+
+    //- {fn}
+    void sendNoteOff(int channel, int note, int velocity)
+    //-only-file body
+    {
+        midiOut.send_message(libremidi::channel_events::note_off(channel, note, velocity));
+    }
+
+    //- {fn}
+    void sendControlChange(int channel, int control, int value)
+    //-only-file body
+    {
+        midiOut.send_message(libremidi::channel_events::control_change(channel, control, value));
+    }
+
     //-only-file header
-    const std::string &getPortName() const{
+    const std::string &getPortName() const
+    {
         return portName;
     }
 
-    const int getPortIdx() const {
+    const int getPortIdx() const
+    {
         return portIdx;
     }
 
-    const int getIsOpened() const {
+    const int getIsOpened() const
+    {
         return isOpened;
-    }    
-    
-    void test(){
-        int channel = 0;
-        int note=60;
-        int control = 60;
-        int value = 60;
-        int velocity = 60;
-        midiOut.send_message(libremidi::channel_events::note_on(channel, note, velocity));
-        midiOut.send_message(libremidi::channel_events::control_change(channel, control, value));
     }
+
 
 private:
     bool isOpened = false;
