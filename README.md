@@ -20,6 +20,14 @@ You write automation logic in Python; the C++ layer handles MIDI I/O, telnet com
 
 # 🛠️ Installation
 
+### Enable FlightGear telnet
+
+Add to FlightGear’s *Additional Settings*:
+
+```
+--telnet=5500 --prop:/sim/terrasync/http-server=http://flightgear.sourceforge.net/scenery
+```
+
 ## Option 1 — Install from GitHub Releases (recommended)
 
 You can download a pre‑built wheel from the project’s **GitHub Releases** page.
@@ -43,14 +51,6 @@ import FlightgearMidi
 ---
 
 ## Option 2 — Build the module yourself
-
-### Enable FlightGear telnet
-
-Add to FlightGear’s *Additional Settings*:
-
-```
---telnet=5500 --prop:/sim/terrasync/http-server=http://flightgear.sourceforge.net/scenery
-```
 
 ### 1. Install dependencies
 
