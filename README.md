@@ -200,6 +200,17 @@ The backend now:
 - Sends commands to FlightGear via telnet
 - Calls your Python callbacks with FG values on interval
 
+### 6. Send to midi out
+
+```python
+if not midi.openLibreMidiOutPort("Flightgear",0):
+    print("Forgot to that MidiRouterClient to create virtual port")
+    exit(0)
+
+midiOutPort = midi.getLibreMidiOutPort("Flightgear",0)
+midiOutPort.sendNoteOn(0, novation_flaps_led_id, novation_color_off)
+```
+
 ---
 
 # 🎯 Summary
