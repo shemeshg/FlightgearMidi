@@ -8,9 +8,8 @@ module_dir = os.path.join(script_dir, "..", "build", "FlightgearMidi")
 sys.path.append(module_dir)
 
 import FlightgearMidi
-import mido
-#print(mido.get_output_names())
-#exit(0)
+
+
 
 novation_color_off = 12
 
@@ -30,19 +29,15 @@ novation_color_amber = 63
 novation_color_amber_blink = 59
 
 
-# midio bug can list virtual ports but not send to
-hw_midi_outport = mido.open_output("Launch Control XL")
+
 # rottery leds are 13 + row_offset + 16 * column_offset
 # btn leds are 41..44 57..60
 # btn leds are 73..76 89..92
 
 novation_flaps_led_id = 13 + 0 + 16 * 0
 novation_air_speed_id = 73
-msg = mido.Message('note_on', note=novation_flaps_led_id, velocity=novation_color_off, channel=0)
-hw_midi_outport.send(msg)
-msg = mido.Message('note_on', note=novation_air_speed_id, velocity=novation_color_off, channel=0)
-hw_midi_outport.send(msg)
 
+midiOutPort = None
 previous_air_speed_state = None
 def pull_indicated_air_speed_callback(key, val):    
     try:
@@ -50,6 +45,7 @@ def pull_indicated_air_speed_callback(key, val):
     except (ValueError, TypeError):
         return
     global previous_air_speed_state 
+    global midiOutPort
 
     current_air_speed_state = novation_color_off
     if val > 70:
@@ -63,8 +59,7 @@ def pull_indicated_air_speed_callback(key, val):
         
     if current_air_speed_state != previous_air_speed_state:
         previous_air_speed_state = current_air_speed_state
-        msg = mido.Message('note_on', note=novation_air_speed_id, velocity=current_air_speed_state, channel=0)
-        hw_midi_outport.send(msg)
+        midiOutPort.sendNoteOn(0, novation_air_speed_id, current_air_speed_state)
 
 
 
@@ -72,22 +67,19 @@ def pull_indicated_air_speed_callback(key, val):
 
 
 def flaps_on_callback(key, val):
+    global midiOutPort
     try:
         val = float(val)
     except (ValueError, TypeError):
         return
     if val > 0.9:
-        msg = mido.Message('note_on', note=novation_flaps_led_id, velocity=novation_color_red, channel=0)
-        hw_midi_outport.send(msg)
+        midiOutPort.sendNoteOn(0, novation_flaps_led_id, novation_color_red)
     elif val >= 0.6:
-        msg = mido.Message('note_on', note=novation_flaps_led_id, velocity=novation_color_yellow, channel=0)
-        hw_midi_outport.send(msg)
+        midiOutPort.sendNoteOn(0, novation_flaps_led_id, novation_color_yellow)
     elif val >= 0.1:
-        msg = mido.Message('note_on', note=novation_flaps_led_id, velocity=novation_color_green, channel=0)
-        hw_midi_outport.send(msg)
+        midiOutPort.sendNoteOn(0, novation_flaps_led_id, novation_color_green)
     else:
-        msg = mido.Message('note_on', note=novation_flaps_led_id, velocity=novation_color_off, channel=0)
-        hw_midi_outport.send(msg)
+        midiOutPort.sendNoteOn(0, novation_flaps_led_id, novation_color_off)
 
 def loadConfigData():
     cfg = FlightgearMidi.DataConfig()
@@ -185,6 +177,15 @@ cfg2 = midi.getDataConfig()
 print("in ports:\n" + "\n".join(" " + p for p in midi.getInPorts()))
 print("out ports:\n" + "\n".join(" " + p for p in midi.getOutPorts()))
 print()
+
+if not midi.openLibreMidiOutPort("Flightgear",0):
+    print("Forgot to that MidiRouterClient to create virtual port")
+    exit(0)
+
+midiOutPort = midi.getLibreMidiOutPort("Flightgear",0)
+midiOutPort.sendNoteOn(0, novation_flaps_led_id, novation_color_off)
+midiOutPort.sendNoteOn(0, novation_air_speed_id, novation_color_off)
+
 
 terminal_mode = False
 
