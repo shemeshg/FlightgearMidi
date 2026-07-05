@@ -1,12 +1,10 @@
 # 🎹 FlightgearMidi — Python MIDI → FlightGear Bridge  
-A lightweight C++/pybind11 module with a Python API
+A lightweight C++/pybind11 module with a clean Python API
 
-This project provides a Python‑friendly interface for configuring MIDI input mappings and FlightGear telnet output.  
-The core logic is implemented in C++ for performance, and exposed to Python using **pybind11**.  
-You write your automation logic in Python — the C++ backend handles MIDI, telnet, and real‑time routing.
+**FlightgearMidi** maps MIDI input to FlightGear telnet commands using a fast C++ backend exposed to Python via **pybind11**.  
+You write automation logic in Python; the C++ layer handles MIDI I/O, telnet communication, and real‑time routing.
 
-Because of how Telnet communication works, it’s better to have two separate scripts: 
-one for sending events to FG and another for receiving them (if required).
+*Note:* FlightGear’s telnet interface works best when sending and receiving events are handled in separate scripts.
 
 ---
 
@@ -14,17 +12,41 @@ one for sending events to FG and another for receiving them (if required).
 
 - Python API for all configuration objects (`DataConfig`, `DataConfigMidiInput`, etc.)
 - Real‑time MIDI → FlightGear telnet mapping
-- Python callbacks for FlightGear value changes
+- Python callbacks for FlightGear value updates
 - Simple configuration builder (see `testPy/test.py`)
 - Cross‑platform C++ backend
 
 ---
 
-# 🛠️ Building the Python Module
+# 🛠️ Installation
 
-enable `telnet` on `Flightgear`
+## Option 1 — Install from GitHub Releases (recommended)
 
-Settings->additional settings
+You can download a pre‑built wheel from the project’s **GitHub Releases** page.
+
+1. Open the repository’s **Releases** section  
+2. Download the `.whl` file matching your OS + Python version  
+3. Install it:
+
+```bash
+pip install ./flightgearmidi‑0.1.0‑cp311‑cp311‑macosx_13_0_arm64.whl
+```
+
+(Replace the filename with the one you downloaded.)
+
+Then simply:
+
+```python
+import FlightgearMidi
+```
+
+---
+
+## Option 2 — Build the module yourself
+
+### Enable FlightGear telnet
+
+Add to FlightGear’s *Additional Settings*:
 
 ```
 --telnet=5500 --prop:/sim/terrasync/http-server=http://flightgear.sourceforge.net/scenery
@@ -32,14 +54,11 @@ Settings->additional settings
 
 ### 1. Install dependencies
 
-You need:
+- CMake ≥ 3.16  
+- C++17 compiler  
+- Python ≥ 3.10  
 
-- CMake (3.16+)
-- A C++17 compiler
-- Python 3.10+ (or your preferred version)
-
-
-Optional: create a virtual environment:
+Optional virtual environment:
 
 ```bash
 python3 -m venv .venv
@@ -48,9 +67,7 @@ source .venv/bin/activate
 
 ---
 
-### 2. Configure and build
-
-From the project root:
+### 2. Build with CMake
 
 ```bash
 mkdir build
@@ -59,38 +76,34 @@ cmake ..
 make -j
 ```
 
-This produces a Python extension module:
+This produces a Python extension module such as:
 
 ```
 FlightgearMidi.cpython-311-darwin.so
 ```
 
-(or similar, depending on your Python version)
+### Alternative: Build via Python
 
-or compile using python
-
-```
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install build
-python -m build --wheel 
+python -m build --wheel
 cd dist
-pip install flightgearmidi-0.1.0-cp314-cp314-macosx_26_0_arm64.whl
+pip install flightgearmidi-0.1.0-*.whl
 ```
-
-
 
 ---
 
-### 3. Make Python able to import the module
+### 3. Make the module importable
 
-Option A — copy the module into your virtualenv:
+**Option A — copy into your virtualenv:**
 
 ```bash
 cp FlightgearMidi*.so ../.venv/lib/python3.11/site-packages/
 ```
 
-Option B — add the build directory to `sys.path` inside your script:
+**Option B — add the build directory to `sys.path`:**
 
 ```python
 import sys
@@ -100,9 +113,9 @@ import FlightgearMidi
 
 ---
 
-# 🧪 Running the Test Script
+# 🧪 Running the Example
 
-The example script is located at:
+Example script:
 
 ```
 testPy/test.py
@@ -111,13 +124,13 @@ testPy/test.py
 It demonstrates:
 
 - Creating a `DataConfig`
-- Adding MIDI input mappings
+- Adding MIDI inputs and mappings
 - Adding FlightGear puller keys
-- Assigning Python callbacks
+- Registering Python callbacks
 - Starting the MIDI client
-- Printing incoming/outgoing values
+- Sending MIDI output
 
-### Run it:
+Run it:
 
 ```bash
 python3 testPy/test.py
@@ -125,11 +138,9 @@ python3 testPy/test.py
 
 ---
 
-# 📘 Understanding the Test Script
+# 📘 How the Test Script Works
 
-The script builds a full configuration in Python:
-
-### 1. Create the main config object
+### 1. Create the main config
 
 ```python
 cfg = FlightgearMidi.DataConfig()
@@ -147,16 +158,6 @@ midi_input.midiInputName = "Launch Control XL"
 
 ### 3. Add MIDI → FlightGear mappings
 
-Each mapping defines:
-
-- MIDI range (`fromStart`, `fromEnd`)
-- FlightGear range (`toStart`, `toEnd`)
-- MIDI message type
-- MIDI channel / CC number
-- FlightGear command path
-
-Example:
-
 ```python
 mapping = FlightgearMidi.DataConfigFromMidiToTelnet()
 mapping.fromStart = 0
@@ -170,7 +171,7 @@ mapping.setCmd = "/controls/engines/engine[0]/throttle"
 midi_input.dataConfigFromMidiToTelnets.append(mapping)
 ```
 
-### 4. Add FlightGear puller keys with Python callbacks
+### 4. Add FlightGear puller keys + callbacks
 
 ```python
 pull = FlightgearMidi.DataConfigPullerFgKey()
@@ -180,7 +181,7 @@ pull.callback = lambda key, val: print(f"FG update: {key} = {val}")
 cfg.dataConfigPullerFgKeys.append(pull)
 ```
 
-### 5. Send the config to the C++ backend
+### 5. Send config to backend
 
 ```python
 midi = FlightgearMidi.getMidiClientItf()
@@ -193,18 +194,11 @@ midi.setDataConfig(cfg)
 midi.startMidiClient()
 ```
 
-The backend now:
-
-- Reads MIDI input
-- Converts values according to your config
-- Sends commands to FlightGear via telnet
-- Calls your Python callbacks with FG values on interval
-
-### 6. Send to midi out
+### 7. Send MIDI output
 
 ```python
 if not midi.openLibreMidiOutPort("Flightgear",0):
-    print("Forgot to that MidiRouterClient to create virtual port")
+    print("Forgot to create virtual port")
     exit(0)
 
 midiOutPort = midi.getLibreMidiOutPort("Flightgear",0)
@@ -215,11 +209,12 @@ midiOutPort.sendNoteOn(0, novation_flaps_led_id, novation_color_off)
 
 # 🎯 Summary
 
-This project gives you a fast C++ backend with a clean Python API:
+**FlightgearMidi** provides:
 
-- Build the module with CMake  
-- Import `FlightgearMidi` in Python  
-- Construct your config  
-- Start the MIDI client  
-- Enjoy real‑time MIDI → FlightGear control  
+- A fast C++ backend  
+- A simple Python API  
+- Real‑time MIDI → FlightGear control  
+- Easy configuration and callback handling  
+
+Install from GitHub Releases or build locally, import the module, define your mappings, and start the MIDI client — everything else runs automatically.
 
