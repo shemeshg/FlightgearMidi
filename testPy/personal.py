@@ -91,7 +91,7 @@ def loadConfigData():
     # --- MIDI INPUT CONFIG ---
     midi_input = FlightgearMidi.DataConfigMidiInput()
     midi_input.midiInputIdx = 0
-    midi_input.midiInputName = "Flightgear"
+    midi_input.midiInputName = "FightgearOut"
     # Helper to reduce repetition
     def add_mapping(fromStart, fromEnd, toStart, toEnd,
                     msgType, channel, cc, cmd):
@@ -178,11 +178,11 @@ print("in ports:\n" + "\n".join(" " + p for p in midi.getInPorts()))
 print("out ports:\n" + "\n".join(" " + p for p in midi.getOutPorts()))
 print()
 
-if not midi.openLibreMidiOutPort("Flightgear",0):
+if not midi.openLibreMidiOutPort("FlightgearIn",0):
     print("Forgot to that MidiRouterClient to create virtual port")
     exit(0)
 
-midiOutPort = midi.getLibreMidiOutPort("Flightgear",0)
+midiOutPort = midi.getLibreMidiOutPort("FlightgearIn",0)
 midiOutPort.sendNoteOn(0, novation_flaps_led_id, novation_color_off)
 midiOutPort.sendNoteOn(0, novation_air_speed_id, novation_color_off)
 
