@@ -37,6 +37,8 @@ You can download a pre‑built wheel from the project’s **GitHub Releases** pa
 3. Install it:
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install ./flightgearmidi‑0.1.0‑cp311‑cp311‑macosx_13_0_arm64.whl
 ```
 
@@ -115,7 +117,8 @@ import FlightgearMidi
 
 # 🧪 Running the Example
 
-Example script:
+Example script: https://github.com/shemeshg/FlightgearMidi/blob/main/testPy/
+
 
 ```
 testPy/test.py
