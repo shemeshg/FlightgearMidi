@@ -13,6 +13,9 @@ MIDI_INPUT_INDEX: int = 0
 MIDI_OUTPUT_NAME: str = "FlightgearIn"
 MIDI_OUTPUT_INDEX: int = 0
 
+TELNET_HOST: str = "localhost"
+TELNET_PORT: str = "5500"
+
 # ---------------------------------------------------------------------------
 # MODULE PATH SETUP
 # ---------------------------------------------------------------------------
@@ -123,8 +126,8 @@ def flaps_on_callback(key: str, val: Any) -> None:
 
 def loadConfigData() -> FlightgearMidi.DataConfig:
     cfg = FlightgearMidi.DataConfig()
-    cfg.telnetHost = "localhost"
-    cfg.telnetPort = "5500"
+    cfg.telnetHost = TELNET_HOST
+    cfg.telnetPort = TELNET_PORT
 
     midi_input = FlightgearMidi.DataConfigMidiInput()
     midi_input.midiInputIdx = MIDI_INPUT_INDEX
