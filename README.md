@@ -4,7 +4,7 @@ A lightweight C++/pybind11 module with a clean Python API
 **FlightgearMidi** maps MIDI input to FlightGear telnet commands using a fast C++ backend exposed to Python via **pybind11**.  
 You write automation logic in Python; the C++ layer handles MIDI I/O, telnet communication, and real‑time routing.
 
-*Note:* FlightGear’s telnet interface works best when sending and receiving events are handled in separate scripts threads or DataConfigMidiInput instances.
+*Note:* FlightGear’s telnet interface works best when sending and receiving events are handled in separate scripts threads for DataConfigMidiInput instances.
 
 ---
 
