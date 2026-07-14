@@ -70,7 +70,8 @@ novation_air_speed_id = 73
 
 midiOutPort: Optional[Any] = None
 previous_air_speed_state: Optional[int] = None
-
+carb_is_hot = False
+midi = None
 
 # ---------------------------------------------------------------------------
 # CALLBACKS
@@ -125,6 +126,14 @@ def pull_carb_heat_callback(key: str, val: str) -> None:
         return
 
     
+def carb_heat_toggle_callback(val: Any) -> None:
+    global midiOutPort, carb_is_hot, midi
+    carb_is_hot = not carb_is_hot
+    if carb_is_hot:
+        midi.sendTerminalRaw("set /controls/engines/current-engine/carb-heat true")
+    else:
+        midi.sendTerminalRaw("set /controls/engines/current-engine/carb-heat false")
+
 
 
 
@@ -184,16 +193,6 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
         midi_input.dataConfigFromMidiToTelnets.append(m)
 
 
-
-    carb_heat_dcf = FlightgearMidi.DataConfigFromMidiToTelnet()  
-    carb_heat_dcf.midiMsgType = FlightgearMidi.MidiMsgType.NOTE_ON
-    carb_heat_dcf.notePitchOrCcChannel = 105
-    carb_heat_dcf.isCallback = True
-    carb_heat_dcf.callback = lambda val: print(f"my val {val}")
-    midi_input.dataConfigFromMidiToTelnets.append(carb_heat_dcf)
-
-
-
     # Control mappings
     add_mapping(0, 127, 0, 1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 77,
                 "/controls/engines/engine[0]/throttle")
@@ -205,6 +204,13 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
                 "/controls/flight/elevator")
     add_mapping(0, 127, 0, 1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 84,
                 "/controls/engines/current-engine/mixture")
+
+    carb_heat_dcf = FlightgearMidi.DataConfigFromMidiToTelnet()  
+    carb_heat_dcf.midiMsgType = FlightgearMidi.MidiMsgType.NOTE_ON
+    carb_heat_dcf.notePitchOrCcChannel = 105
+    carb_heat_dcf.isCallback = True
+    carb_heat_dcf.callback = carb_heat_toggle_callback
+    midi_input.dataConfigFromMidiToTelnets.append(carb_heat_dcf)
 
     cfg.dataConfigMidiInputs.append(midi_input)
 
@@ -237,7 +243,7 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
-    global midiOutPort
+    global midiOutPort, midi
 
     midi = FlightgearMidi.getMidiClientItf()
     midi.pullerSleepInterval = 200
