@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <memory>
 
 
 enum class MidiMsgType : uint8_t
