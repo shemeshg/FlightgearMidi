@@ -99,6 +99,35 @@ def pull_indicated_air_speed_callback(key: str, val: Any) -> None:
         midiOutPort.sendNoteOn(0, novation_air_speed_id, current_state)
 
 
+def pull_carb_heat_callback(key: str, val: str) -> None:
+    global midiOutPort
+
+    v = val.strip().lower()
+
+    # Boolean strings
+    if v == "true":
+        carb_heat = 1.0
+    elif v == "false":
+        carb_heat = 0.0
+    else:
+        # Numeric strings
+        try:
+            carb_heat = float(v)
+        except ValueError:
+            print(f"Invalid carb_heat value: {val}")
+            return
+        
+    if carb_heat == 1:  
+        midiOutPort.sendNoteOn(0, 105, 127)
+    elif carb_heat == 0:
+        midiOutPort.sendNoteOn(0, 105, 0)
+    else:
+        return
+
+    
+
+
+
 def flaps_on_callback(key: str, val: Any) -> None:
     """Update flaps LED based on flap position."""
     global midiOutPort
@@ -178,6 +207,14 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
     pull_ias.fgKetPath = "/instrumentation/airspeed-indicator/indicated-speed-kt"
     pull_ias.callback = pull_indicated_air_speed_callback
     cfg.dataConfigPullerFgKeys.append(pull_ias)
+
+
+    pull_carb_heat = FlightgearMidi.DataConfigPullerFgKey()
+    pull_carb_heat.fgKetPath = "/controls/engines/current-engine/carb-heat"
+    pull_carb_heat.callback = pull_carb_heat_callback
+    cfg.dataConfigPullerFgKeys.append(pull_carb_heat)
+    
+
 
     return cfg
 
