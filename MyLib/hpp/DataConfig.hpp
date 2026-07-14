@@ -52,6 +52,9 @@ public:
     int midiChannel = -1;
     int notePitchOrCcChannel = 0;
     std::string setCmd;
+    bool isCallback = false;
+    std::function<void(std::vector<int>)> callback = [](std::vector<int> data){
+    };    
 };
 
 class DataConfigMidiInput
@@ -59,7 +62,7 @@ class DataConfigMidiInput
 public:
     std::string midiInputName;
     int midiInputIdx;
-    std::vector<DataConfigFromMidiToTelnet> dataConfigFromMidiToTelnets;
+    std::vector<std::shared_ptr<DataConfigFromMidiToTelnet>> dataConfigFromMidiToTelnets;
 };
 
 class DataConfigPullerFgKey

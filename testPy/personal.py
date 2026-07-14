@@ -25,7 +25,7 @@ module_dir = os.path.join(script_dir, "..", "build", "FlightgearMidi")
 sys.path.append(module_dir)
 
 import FlightgearMidi  # noqa: E402
-
+print("Loaded module from:", FlightgearMidi.__file__)
 
 # ---------------------------------------------------------------------------
 # LOGGING SETUP
@@ -114,7 +114,7 @@ def pull_carb_heat_callback(key: str, val: str) -> None:
         try:
             carb_heat = float(v)
         except ValueError:
-            print(f"Invalid carb_heat value: {val}")
+            #print(f"Invalid carb_heat value: {val}")
             return
         
     if carb_heat == 1:  
@@ -183,6 +183,17 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
         m.setCmd = cmd
         midi_input.dataConfigFromMidiToTelnets.append(m)
 
+
+
+    carb_heat_dcf = FlightgearMidi.DataConfigFromMidiToTelnet()  
+    carb_heat_dcf.midiMsgType = FlightgearMidi.MidiMsgType.NOTE_ON
+    carb_heat_dcf.notePitchOrCcChannel = 105
+    carb_heat_dcf.isCallback = True
+    carb_heat_dcf.callback = lambda val: print(f"my val {val}")
+    midi_input.dataConfigFromMidiToTelnets.append(carb_heat_dcf)
+
+
+
     # Control mappings
     add_mapping(0, 127, 0, 1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 77,
                 "/controls/engines/engine[0]/throttle")
@@ -196,6 +207,8 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
                 "/controls/engines/current-engine/mixture")
 
     cfg.dataConfigMidiInputs.append(midi_input)
+
+
 
     # Puller keys
     pull_flaps = FlightgearMidi.DataConfigPullerFgKey()

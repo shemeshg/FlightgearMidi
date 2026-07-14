@@ -12,60 +12,60 @@ DataConfig loadConfigData()
     dataConfigMidiInput.midiInputIdx = 0;
     dataConfigMidiInput.midiInputName = "Launch Control XL";
 
-    DataConfigFromMidiToTelnet dcfmttThrottle{};
-    dcfmttThrottle.fromStart = 0;
-    dcfmttThrottle.fromEnd = 127;
-    dcfmttThrottle.toStart = 0;
-    dcfmttThrottle.toEnd = 1;
-    dcfmttThrottle.midiMsgType = MidiMsgType::CONTROL_CHANGE;
-    dcfmttThrottle.midiChannel = -1;
-    dcfmttThrottle.notePitchOrCcChannel = 77;
-    dcfmttThrottle.setCmd = "/controls/engines/engine[0]/throttle";
-    dataConfigMidiInput.dataConfigFromMidiToTelnets.push_back(std::move(dcfmttThrottle));
+    auto dcfmttThrottle = std::make_shared<DataConfigFromMidiToTelnet>();
+    dcfmttThrottle->fromStart = 0;
+    dcfmttThrottle->fromEnd = 127;
+    dcfmttThrottle->toStart = 0;
+    dcfmttThrottle->toEnd = 1;
+    dcfmttThrottle->midiMsgType = MidiMsgType::CONTROL_CHANGE;
+    dcfmttThrottle->midiChannel = -1;
+    dcfmttThrottle->notePitchOrCcChannel = 77;
+    dcfmttThrottle->setCmd = "/controls/engines/engine[0]/throttle";
+    dataConfigMidiInput.dataConfigFromMidiToTelnets.push_back(dcfmttThrottle);
 
-    DataConfigFromMidiToTelnet dcfmttRudder{};
-    dcfmttRudder.fromStart = 0;
-    dcfmttRudder.fromEnd = 127;
-    dcfmttRudder.toStart = 1;
-    dcfmttRudder.toEnd = -1;
-    dcfmttRudder.midiMsgType = MidiMsgType::CONTROL_CHANGE;
-    dcfmttRudder.midiChannel = -1;
-    dcfmttRudder.notePitchOrCcChannel = 78;
-    dcfmttRudder.setCmd = "/controls/flight/rudder";
-    dataConfigMidiInput.dataConfigFromMidiToTelnets.push_back(std::move(dcfmttRudder));
+    auto dcfmttRudder = std::make_shared<DataConfigFromMidiToTelnet>();
+    dcfmttRudder->fromStart = 0;
+    dcfmttRudder->fromEnd = 127;
+    dcfmttRudder->toStart = 1;
+    dcfmttRudder->toEnd = -1;
+    dcfmttRudder->midiMsgType = MidiMsgType::CONTROL_CHANGE;
+    dcfmttRudder->midiChannel = -1;
+    dcfmttRudder->notePitchOrCcChannel = 78;
+    dcfmttRudder->setCmd = "/controls/flight/rudder";
+    dataConfigMidiInput.dataConfigFromMidiToTelnets.push_back(dcfmttRudder);
 
-    DataConfigFromMidiToTelnet dcfmttAileron{};
-    dcfmttAileron.fromStart = 0;
-    dcfmttAileron.fromEnd = 127;
-    dcfmttAileron.toStart = 1;
-    dcfmttAileron.toEnd = -1;
-    dcfmttAileron.midiMsgType = MidiMsgType::CONTROL_CHANGE;
-    dcfmttAileron.midiChannel = -1;
-    dcfmttAileron.notePitchOrCcChannel = 79;
-    dcfmttAileron.setCmd = "/controls/flight/aileron";
-    dataConfigMidiInput.dataConfigFromMidiToTelnets.push_back(std::move(dcfmttAileron));
+    auto dcfmttAileron = std::make_shared<DataConfigFromMidiToTelnet>();
+    dcfmttAileron->fromStart = 0;
+    dcfmttAileron->fromEnd = 127;
+    dcfmttAileron->toStart = 1;
+    dcfmttAileron->toEnd = -1;
+    dcfmttAileron->midiMsgType = MidiMsgType::CONTROL_CHANGE;
+    dcfmttAileron->midiChannel = -1;
+    dcfmttAileron->notePitchOrCcChannel = 79;
+    dcfmttAileron->setCmd = "/controls/flight/aileron";
+    dataConfigMidiInput.dataConfigFromMidiToTelnets.push_back(dcfmttAileron);
 
-    DataConfigFromMidiToTelnet dcfmttElevator{};
-    dcfmttElevator.fromStart = 0;
-    dcfmttElevator.fromEnd = 127;
-    dcfmttElevator.toStart = -1;
-    dcfmttElevator.toEnd = 1;
-    dcfmttElevator.midiMsgType = MidiMsgType::CONTROL_CHANGE;
-    dcfmttElevator.midiChannel = -1;
-    dcfmttElevator.notePitchOrCcChannel = 80;
-    dcfmttElevator.setCmd = "/controls/flight/elevator";
-    dataConfigMidiInput.dataConfigFromMidiToTelnets.push_back(std::move(dcfmttElevator));
+    auto dcfmttElevator = std::make_shared<DataConfigFromMidiToTelnet>();
+    dcfmttElevator->fromStart = 0;
+    dcfmttElevator->fromEnd = 127;
+    dcfmttElevator->toStart = -1;
+    dcfmttElevator->toEnd = 1;
+    dcfmttElevator->midiMsgType = MidiMsgType::CONTROL_CHANGE;
+    dcfmttElevator->midiChannel = -1;
+    dcfmttElevator->notePitchOrCcChannel = 80;
+    dcfmttElevator->setCmd = "/controls/flight/elevator";
+    dataConfigMidiInput.dataConfigFromMidiToTelnets.push_back(dcfmttElevator);
 
-    DataConfigFromMidiToTelnet dcfmttMixure{};
-    dcfmttMixure.fromStart = 0;
-    dcfmttMixure.fromEnd = 127;
-    dcfmttMixure.toStart = 0;
-    dcfmttMixure.toEnd = 1;
-    dcfmttMixure.midiMsgType = MidiMsgType::CONTROL_CHANGE;
-    dcfmttMixure.midiChannel = -1;
-    dcfmttMixure.notePitchOrCcChannel = 84;
-    dcfmttMixure.setCmd = "/controls/engines/current-engine/mixture";
-    dataConfigMidiInput.dataConfigFromMidiToTelnets.push_back(std::move(dcfmttMixure));
+    auto dcfmttMixure = std::make_shared<DataConfigFromMidiToTelnet>();
+    dcfmttMixure->fromStart = 0;
+    dcfmttMixure->fromEnd = 127;
+    dcfmttMixure->toStart = 0;
+    dcfmttMixure->toEnd = 1;
+    dcfmttMixure->midiMsgType = MidiMsgType::CONTROL_CHANGE;
+    dcfmttMixure->midiChannel = -1;
+    dcfmttMixure->notePitchOrCcChannel = 84;
+    dcfmttMixure->setCmd = "/controls/engines/current-engine/mixture";
+    dataConfigMidiInput.dataConfigFromMidiToTelnets.push_back(dcfmttMixure);
 
     dataConfig.dataConfigMidiInputs.push_back(std::move(dataConfigMidiInput));
 
@@ -164,14 +164,16 @@ int runFlightGearClient()
     return 0;
 }
 
-int testSendMidi(){
+int testSendMidi()
+{
     auto midiItf = getMidiClientItf();
-    if (!midiItf->openLibreMidiOutPort("Flightgear",0)){
-        std::cout<<"Main Could not open port\n";
+    if (!midiItf->openLibreMidiOutPort("Flightgear", 0))
+    {
+        std::cout << "Main Could not open port\n";
         return 0;
     }
-    auto l = midiItf->getLibreMidiOutPort("Flightgear",0);
-    l->sendNoteOn(0,60,60);
+    auto l = midiItf->getLibreMidiOutPort("Flightgear", 0);
+    l->sendNoteOn(0, 60, 60);
     return 0;
 }
 

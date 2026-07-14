@@ -174,6 +174,16 @@ mapping.setCmd = "/controls/engines/engine[0]/throttle"
 midi_input.dataConfigFromMidiToTelnets.append(mapping)
 ```
 
+or with callback
+```python
+    carb_heat_dcf = FlightgearMidi.DataConfigFromMidiToTelnet()  
+    carb_heat_dcf.midiMsgType = FlightgearMidi.MidiMsgType.NOTE_ON
+    carb_heat_dcf.notePitchOrCcChannel = 105
+    carb_heat_dcf.isCallback = True
+    carb_heat_dcf.callback = lambda val: print(f"my midi vector {val}")
+    midi_input.dataConfigFromMidiToTelnets.append(carb_heat_dcf)
+```
+
 ### 4. Add FlightGear puller keys + callbacks
 
 ```python

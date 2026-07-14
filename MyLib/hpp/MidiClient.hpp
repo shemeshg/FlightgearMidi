@@ -257,15 +257,28 @@ public:
             {
                 for (const auto &dataConfigFromMidiToTelnet : midiInput.dataConfigFromMidiToTelnets)
                 {
-
-                    if (dataConfigFromMidiToTelnet.midiMsgType == static_cast<MidiMsgType>(message.get_message_type()) &&
-                        (dataConfigFromMidiToTelnet.midiChannel == -1 ||
-                         dataConfigFromMidiToTelnet.midiChannel == message.get_channel()) &&
-                        message.bytes[1] == dataConfigFromMidiToTelnet.notePitchOrCcChannel)
+                    if (dataConfigFromMidiToTelnet->midiMsgType == static_cast<MidiMsgType>(message.get_message_type()) &&
+                        (dataConfigFromMidiToTelnet->midiChannel == -1 ||
+                         dataConfigFromMidiToTelnet->midiChannel == message.get_channel()) &&
+                        message.bytes[1] == dataConfigFromMidiToTelnet->notePitchOrCcChannel)
                     {
-                        double val = translateClamped(message.bytes[2], dataConfigFromMidiToTelnet.fromStart,
-                                                      dataConfigFromMidiToTelnet.fromEnd, dataConfigFromMidiToTelnet.toStart, dataConfigFromMidiToTelnet.toEnd);
-                        telnetClient.setValue(dataConfigFromMidiToTelnet.setCmd, this->formatN(val, 3));
+                        if (dataConfigFromMidiToTelnet->isCallback)
+                        {
+
+                            std::vector<int> raw;
+                            raw.reserve(message.bytes.size());
+
+                            for (unsigned char b : message.bytes)
+                                raw.push_back(static_cast<int>(b));
+
+                            dataConfigFromMidiToTelnet->callback(raw);
+                        }
+                        else
+                        {
+                            double val = translateClamped(message.bytes[2], dataConfigFromMidiToTelnet->fromStart,
+                                                          dataConfigFromMidiToTelnet->fromEnd, dataConfigFromMidiToTelnet->toStart, dataConfigFromMidiToTelnet->toEnd);
+                            telnetClient.setValue(dataConfigFromMidiToTelnet->setCmd, this->formatN(val, 3));
+                        }
                     }
                 }
             };

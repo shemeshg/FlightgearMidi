@@ -12,6 +12,8 @@ namespace py = pybind11;
 PYBIND11_MAKE_OPAQUE(std::vector<DataConfigMidiInput>);
 PYBIND11_MAKE_OPAQUE(std::vector<DataConfigFromMidiToTelnet>);
 PYBIND11_MAKE_OPAQUE(std::vector<DataConfigPullerFgKey>);
+PYBIND11_MAKE_OPAQUE(std::vector<std::shared_ptr<DataConfigFromMidiToTelnet>>);
+
 
 PYBIND11_MODULE(FlightgearMidi, m)
 {
@@ -58,7 +60,7 @@ PYBIND11_MODULE(FlightgearMidi, m)
         .value("NOTE_OFF", MidiMsgType::NOTE_OFF);
 
     // DataConfigFromMidiToTelnet
-    py::class_<DataConfigFromMidiToTelnet>(m, "DataConfigFromMidiToTelnet")
+    py::class_<DataConfigFromMidiToTelnet, std::shared_ptr<DataConfigFromMidiToTelnet>>(m, "DataConfigFromMidiToTelnet")
         .def(py::init<>())
         .def_readwrite("fromStart", &DataConfigFromMidiToTelnet::fromStart)
         .def_readwrite("fromEnd", &DataConfigFromMidiToTelnet::fromEnd)
@@ -67,8 +69,21 @@ PYBIND11_MODULE(FlightgearMidi, m)
         .def_readwrite("midiMsgType", &DataConfigFromMidiToTelnet::midiMsgType)
         .def_readwrite("midiChannel", &DataConfigFromMidiToTelnet::midiChannel)
         .def_readwrite("notePitchOrCcChannel", &DataConfigFromMidiToTelnet::notePitchOrCcChannel)
-        .def_readwrite("setCmd", &DataConfigFromMidiToTelnet::setCmd);
+        .def_readwrite("setCmd", &DataConfigFromMidiToTelnet::setCmd)
+        .def_readwrite("isCallback", &DataConfigFromMidiToTelnet::isCallback)
+        .def_property(
+            "callback",
+            [](DataConfigFromMidiToTelnet &self)
+            {
+                return self.callback;
+            },
+            [](DataConfigFromMidiToTelnet &self, std::function<void(std::vector<int>)> cb)
+            {
+                self.callback = cb;
+            });        
+        ;
 
+     py::bind_vector<std::vector<std::shared_ptr<DataConfigFromMidiToTelnet>>>(m, "VectorDataConfigFromMidiToTelnet");   
     // DataConfigMidiInput
     py::class_<DataConfigMidiInput>(m, "DataConfigMidiInput")
         .def(py::init<>())
