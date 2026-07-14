@@ -106,10 +106,6 @@ def pull_carb_heat_callback(key: str, val: str) -> None:
         carb = 0
     else:
         return
-        #try:
-        #    carb = float(v)
-        #except Exception:
-        #    return
 
     state.midi_out.sendNoteOn(0, CARB_HEAT_LED_ID, 127 if carb == 1 else 0)
 
