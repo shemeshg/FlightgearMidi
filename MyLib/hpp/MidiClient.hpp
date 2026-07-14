@@ -258,8 +258,7 @@ public:
                 for (const auto &dataConfigFromMidiToTelnet : midiInput.dataConfigFromMidiToTelnets)
                 {
 
-                    if (dataConfigFromMidiToTelnet.midiMsgType == MidiMsgType::CONTROL_CHANGE &&
-                        message.get_message_type() == libremidi::message_type::CONTROL_CHANGE &&
+                    if (dataConfigFromMidiToTelnet.midiMsgType == static_cast<MidiMsgType>(message.get_message_type()) &&
                         (dataConfigFromMidiToTelnet.midiChannel == -1 ||
                          dataConfigFromMidiToTelnet.midiChannel == message.get_channel()) &&
                         message.bytes[1] == dataConfigFromMidiToTelnet.notePitchOrCcChannel)
