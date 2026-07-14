@@ -1,6 +1,8 @@
 import os
 import sys
 import logging
+import threading
+import time
 from dataclasses import dataclass
 from typing import Optional, Any
 
@@ -56,6 +58,7 @@ COLOR = {
 
 FLAPS_LED_ID = 13 + 16 * 0
 AIR_SPEED_LED_ID = 73
+CARB_HEAT_LED_ID = 105
 
 # ---------------------------------------------------------------------------
 # APP STATE
@@ -67,7 +70,6 @@ class AppState:
     midi_out: Optional[Any] = None
     previous_air_speed: Optional[int] = None
     carb_heat_on: bool = False
-
 
 state = AppState()
 
@@ -108,7 +110,7 @@ def pull_carb_heat_callback(key: str, val: str) -> None:
         except Exception:
             return
 
-    state.midi_out.sendNoteOn(0, 105, 127 if carb == 1 else 0)
+    state.midi_out.sendNoteOn(0, CARB_HEAT_LED_ID, 127 if carb == 1 else 0)
 
 
 def carb_heat_toggle_callback(val: Any) -> None:
@@ -160,7 +162,6 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
     midi_input.midiInputIdx = MIDI_INPUT_INDEX
     midi_input.midiInputName = MIDI_INPUT_NAME
 
-    # Control mappings
     mappings = [
         (0, 127, 0, 1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 77,
          "/controls/engines/engine[0]/throttle"),
@@ -177,17 +178,15 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
     for args in mappings:
         add_mapping(midi_input, *args)
 
-    # Carb heat toggle
     carb_heat = FlightgearMidi.DataConfigFromMidiToTelnet()
     carb_heat.midiMsgType = FlightgearMidi.MidiMsgType.NOTE_ON
-    carb_heat.notePitchOrCcChannel = 105
+    carb_heat.notePitchOrCcChannel = CARB_HEAT_LED_ID
     carb_heat.isCallback = True
     carb_heat.callback = carb_heat_toggle_callback
     midi_input.dataConfigFromMidiToTelnets.append(carb_heat)
 
     cfg.dataConfigMidiInputs.append(midi_input)
 
-    # Puller keys
     def add_puller(path, cb):
         p = FlightgearMidi.DataConfigPullerFgKey()
         p.fgKetPath = path
@@ -201,6 +200,26 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
                pull_carb_heat_callback)
 
     return cfg
+
+# ---------------------------------------------------------------------------
+# BACKGROUND TELNET RECONNECT THREAD
+# ---------------------------------------------------------------------------
+
+def telnet_reconnect_worker():
+    """Check telnet status every 5 seconds and reconnect once if needed."""
+    while True:
+        time.sleep(5)
+
+        try:
+            if state.midi.getIsTelnetRunning():
+                continue
+
+            if state.midi.getIsTelnetDisconnectedSignal():
+                logger.warning("Background: Telnet disconnected, attempting reconnect...")
+                state.midi.startMidiClient()
+
+        except Exception as e:
+            logger.error(f"Reconnect thread error: {e}")
 
 # ---------------------------------------------------------------------------
 # MAIN LOOP
@@ -224,9 +243,10 @@ def main():
 
     state.midi_out = state.midi.getLibreMidiOutPort(MIDI_OUTPUT_NAME, MIDI_OUTPUT_INDEX)
 
-    # Initialize LEDs
     state.midi_out.sendNoteOn(0, FLAPS_LED_ID, COLOR["off"])
     state.midi_out.sendNoteOn(0, AIR_SPEED_LED_ID, COLOR["off"])
+
+    threading.Thread(target=telnet_reconnect_worker, daemon=True).start()
 
     terminal_mode = False
 
@@ -253,17 +273,13 @@ def main():
                     state.midi.sendTerminalRaw(user_input)
 
             else:
-                if state.midi.getIsTelnetDisconnectedSignal():
-                    logger.warning("Disconnected. Attempting restart...")
-                    state.midi.startMidiClient()
-                else:
-                    logger.info("Not Connected\n r=restart q=quit")
-                    user_input = input()
+                logger.info("Not Connected\n r=restart q=quit")
+                user_input = input()
 
-                    if user_input == "q":
-                        break
-                    elif user_input == "r":
-                        state.midi.startMidiClient()
+                if user_input == "q":
+                    break
+                elif user_input == "r":
+                    state.midi.startMidiClient()
 
     except Exception as e:
         logger.exception("Unhandled exception: %s", e)
