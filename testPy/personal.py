@@ -1,20 +1,8 @@
 import os
 import sys
 import logging
-from typing import Optional, Callable, Any
-
-# ---------------------------------------------------------------------------
-# GLOBAL CONSTANTS (easy to notice)
-# ---------------------------------------------------------------------------
-
-MIDI_INPUT_NAME: str = "FlightgearOut"
-MIDI_INPUT_INDEX: int = 0
-
-MIDI_OUTPUT_NAME: str = "FlightgearIn"
-MIDI_OUTPUT_INDEX: int = 0
-
-TELNET_HOST: str = "localhost"
-TELNET_PORT: str = "5500"
+from dataclasses import dataclass
+from typing import Optional, Any
 
 # ---------------------------------------------------------------------------
 # MODULE PATH SETUP
@@ -24,143 +12,144 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 module_dir = os.path.join(script_dir, "..", "build", "FlightgearMidi")
 sys.path.append(module_dir)
 
-import FlightgearMidi  # noqa: E402
+import FlightgearMidi
 print("Loaded module from:", FlightgearMidi.__file__)
 
 # ---------------------------------------------------------------------------
-# LOGGING SETUP
+# LOGGING
 # ---------------------------------------------------------------------------
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
-
 logger = logging.getLogger(__name__)
 
-
 # ---------------------------------------------------------------------------
-# NOVATION LED COLORS
-# ---------------------------------------------------------------------------
-
-novation_color_off = 12
-
-novation_color_red_dim = 13
-novation_color_red = 15
-novation_color_red_blink = 11
-
-novation_color_yellow = 62
-novation_color_yellow_blink = 58
-
-novation_color_green_dim = 28
-novation_color_green = 60
-novation_color_green_blink = 56
-
-novation_color_amber_dim = 29
-novation_color_amber = 63
-novation_color_amber_blink = 59
-
-# LED IDs
-novation_flaps_led_id = 13 + 16 * 0
-novation_air_speed_id = 73
-
-# ---------------------------------------------------------------------------
-# GLOBAL MIDI STATE
+# CONSTANTS
 # ---------------------------------------------------------------------------
 
-midiOutPort: Optional[Any] = None
-previous_air_speed_state: Optional[int] = None
-carb_is_hot = False
-midi = None
+MIDI_INPUT_NAME = "FlightgearOut"
+MIDI_INPUT_INDEX = 0
+
+MIDI_OUTPUT_NAME = "FlightgearIn"
+MIDI_OUTPUT_INDEX = 0
+
+TELNET_HOST = "localhost"
+TELNET_PORT = "5500"
+
+# Novation LED colors
+COLOR = {
+    "off": 12,
+    "red_dim": 13,
+    "red": 15,
+    "red_blink": 11,
+    "yellow": 62,
+    "yellow_blink": 58,
+    "green_dim": 28,
+    "green": 60,
+    "green_blink": 56,
+    "amber_dim": 29,
+    "amber": 63,
+    "amber_blink": 59,
+}
+
+FLAPS_LED_ID = 13 + 16 * 0
+AIR_SPEED_LED_ID = 73
+
+# ---------------------------------------------------------------------------
+# APP STATE
+# ---------------------------------------------------------------------------
+
+@dataclass
+class AppState:
+    midi: Optional[Any] = None
+    midi_out: Optional[Any] = None
+    previous_air_speed: Optional[int] = None
+    carb_heat_on: bool = False
+
+
+state = AppState()
 
 # ---------------------------------------------------------------------------
 # CALLBACKS
 # ---------------------------------------------------------------------------
 
 def pull_indicated_air_speed_callback(key: str, val: Any) -> None:
-    """Update airspeed LED based on indicated airspeed."""
-    global previous_air_speed_state, midiOutPort
-
     try:
         speed = float(val)
-    except (ValueError, TypeError):
+    except Exception:
         return
 
     if speed > 70:
-        current_state = novation_color_off
+        color = COLOR["off"]
     elif speed >= 50:
-        current_state = novation_color_green
+        color = COLOR["green"]
     elif speed >= 40:
-        current_state = novation_color_yellow
+        color = COLOR["yellow"]
     else:
-        current_state = novation_color_red
+        color = COLOR["red"]
 
-    if current_state != previous_air_speed_state:
-        previous_air_speed_state = current_state
-        midiOutPort.sendNoteOn(0, novation_air_speed_id, current_state)
+    if color != state.previous_air_speed:
+        state.previous_air_speed = color
+        state.midi_out.sendNoteOn(0, AIR_SPEED_LED_ID, color)
 
 
 def pull_carb_heat_callback(key: str, val: str) -> None:
-    global midiOutPort
-
     v = val.strip().lower()
 
-    # Boolean strings
     if v == "true":
-        carb_heat = 1.0
+        carb = 1
     elif v == "false":
-        carb_heat = 0.0
+        carb = 0
     else:
-        # Numeric strings
         try:
-            carb_heat = float(v)
-        except ValueError:
-            #print(f"Invalid carb_heat value: {val}")
+            carb = float(v)
+        except Exception:
             return
-        
-    if carb_heat == 1:  
-        midiOutPort.sendNoteOn(0, 105, 127)
-    elif carb_heat == 0:
-        midiOutPort.sendNoteOn(0, 105, 0)
-    else:
-        return
 
-    
+    state.midi_out.sendNoteOn(0, 105, 127 if carb == 1 else 0)
+
+
 def carb_heat_toggle_callback(val: Any) -> None:
-    global midiOutPort, carb_is_hot, midi
-    carb_is_hot = not carb_is_hot
-    if carb_is_hot:
-        midi.sendTerminalRaw("set /controls/engines/current-engine/carb-heat true")
-    else:
-        midi.sendTerminalRaw("set /controls/engines/current-engine/carb-heat false")
-
-
+    state.carb_heat_on = not state.carb_heat_on
+    cmd = "true" if state.carb_heat_on else "false"
+    state.midi.sendTerminalRaw(f"set /controls/engines/current-engine/carb-heat {cmd}")
 
 
 def flaps_on_callback(key: str, val: Any) -> None:
-    """Update flaps LED based on flap position."""
-    global midiOutPort
-
     try:
-        flap_val = float(val)
-    except (ValueError, TypeError):
+        flap = float(val)
+    except Exception:
         return
 
-    if flap_val > 0.9:
-        color = novation_color_red
-    elif flap_val >= 0.6:
-        color = novation_color_yellow
-    elif flap_val >= 0.1:
-        color = novation_color_green
+    if flap > 0.9:
+        color = COLOR["red"]
+    elif flap >= 0.6:
+        color = COLOR["yellow"]
+    elif flap >= 0.1:
+        color = COLOR["green"]
     else:
-        color = novation_color_off
+        color = COLOR["off"]
 
-    midiOutPort.sendNoteOn(0, novation_flaps_led_id, color)
-
+    state.midi_out.sendNoteOn(0, FLAPS_LED_ID, color)
 
 # ---------------------------------------------------------------------------
-# CONFIG LOADER
+# CONFIG CREATION
 # ---------------------------------------------------------------------------
+
+def add_mapping(midi_input, from_start, from_end, to_start, to_end, msg_type, channel, cc, cmd):
+    m = FlightgearMidi.DataConfigFromMidiToTelnet()
+    m.fromStart = from_start
+    m.fromEnd = from_end
+    m.toStart = to_start
+    m.toEnd = to_end
+    m.midiMsgType = msg_type
+    m.midiChannel = channel
+    m.notePitchOrCcChannel = cc
+    m.setCmd = cmd
+    midi_input.dataConfigFromMidiToTelnets.append(m)
+
 
 def loadConfigData() -> FlightgearMidi.DataConfig:
     cfg = FlightgearMidi.DataConfig()
@@ -171,110 +160,83 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
     midi_input.midiInputIdx = MIDI_INPUT_INDEX
     midi_input.midiInputName = MIDI_INPUT_NAME
 
-    def add_mapping(
-        from_start: int,
-        from_end: int,
-        to_start: int,
-        to_end: int,
-        msg_type: int,
-        channel: int,
-        cc: int,
-        cmd: str
-    ) -> None:
-        m = FlightgearMidi.DataConfigFromMidiToTelnet()
-        m.fromStart = from_start
-        m.fromEnd = from_end
-        m.toStart = to_start
-        m.toEnd = to_end
-        m.midiMsgType = msg_type
-        m.midiChannel = channel
-        m.notePitchOrCcChannel = cc
-        m.setCmd = cmd
-        midi_input.dataConfigFromMidiToTelnets.append(m)
-
-
     # Control mappings
-    add_mapping(0, 127, 0, 1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 77,
-                "/controls/engines/engine[0]/throttle")
-    add_mapping(0, 127, 1, -1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 78,
-                "/controls/flight/rudder")
-    add_mapping(0, 127, 1, -1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 79,
-                "/controls/flight/aileron")
-    add_mapping(0, 127, -1, 1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 80,
-                "/controls/flight/elevator")
-    add_mapping(0, 127, 0, 1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 84,
-                "/controls/engines/current-engine/mixture")
+    mappings = [
+        (0, 127, 0, 1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 77,
+         "/controls/engines/engine[0]/throttle"),
+        (0, 127, 1, -1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 78,
+         "/controls/flight/rudder"),
+        (0, 127, 1, -1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 79,
+         "/controls/flight/aileron"),
+        (0, 127, -1, 1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 80,
+         "/controls/flight/elevator"),
+        (0, 127, 0, 1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 84,
+         "/controls/engines/current-engine/mixture"),
+    ]
 
-    carb_heat_dcf = FlightgearMidi.DataConfigFromMidiToTelnet()  
-    carb_heat_dcf.midiMsgType = FlightgearMidi.MidiMsgType.NOTE_ON
-    carb_heat_dcf.notePitchOrCcChannel = 105
-    carb_heat_dcf.isCallback = True
-    carb_heat_dcf.callback = carb_heat_toggle_callback
-    midi_input.dataConfigFromMidiToTelnets.append(carb_heat_dcf)
+    for args in mappings:
+        add_mapping(midi_input, *args)
+
+    # Carb heat toggle
+    carb_heat = FlightgearMidi.DataConfigFromMidiToTelnet()
+    carb_heat.midiMsgType = FlightgearMidi.MidiMsgType.NOTE_ON
+    carb_heat.notePitchOrCcChannel = 105
+    carb_heat.isCallback = True
+    carb_heat.callback = carb_heat_toggle_callback
+    midi_input.dataConfigFromMidiToTelnets.append(carb_heat)
 
     cfg.dataConfigMidiInputs.append(midi_input)
 
-
-
     # Puller keys
-    pull_flaps = FlightgearMidi.DataConfigPullerFgKey()
-    pull_flaps.fgKetPath = "/controls/flight/flaps"
-    pull_flaps.callback = flaps_on_callback
-    cfg.dataConfigPullerFgKeys.append(pull_flaps)
+    def add_puller(path, cb):
+        p = FlightgearMidi.DataConfigPullerFgKey()
+        p.fgKetPath = path
+        p.callback = cb
+        cfg.dataConfigPullerFgKeys.append(p)
 
-    pull_ias = FlightgearMidi.DataConfigPullerFgKey()
-    pull_ias.fgKetPath = "/instrumentation/airspeed-indicator/indicated-speed-kt"
-    pull_ias.callback = pull_indicated_air_speed_callback
-    cfg.dataConfigPullerFgKeys.append(pull_ias)
-
-
-    pull_carb_heat = FlightgearMidi.DataConfigPullerFgKey()
-    pull_carb_heat.fgKetPath = "/controls/engines/current-engine/carb-heat"
-    pull_carb_heat.callback = pull_carb_heat_callback
-    cfg.dataConfigPullerFgKeys.append(pull_carb_heat)
-    
-
+    add_puller("/controls/flight/flaps", flaps_on_callback)
+    add_puller("/instrumentation/airspeed-indicator/indicated-speed-kt",
+               pull_indicated_air_speed_callback)
+    add_puller("/controls/engines/current-engine/carb-heat",
+               pull_carb_heat_callback)
 
     return cfg
 
-
 # ---------------------------------------------------------------------------
-# MAIN APPLICATION LOOP
+# MAIN LOOP
 # ---------------------------------------------------------------------------
 
-def main() -> None:
-    global midiOutPort, midi
-
-    midi = FlightgearMidi.getMidiClientItf()
-    midi.pullerSleepInterval = 200
+def main():
+    state.midi = FlightgearMidi.getMidiClientItf()
+    state.midi.pullerSleepInterval = 200
 
     cfg = loadConfigData()
-    midi.setDataConfig(cfg)
+    state.midi.setDataConfig(cfg)
 
     logger.info("Available MIDI input ports:\n%s",
-                "\n".join(" " + p for p in midi.getInPorts()))
+                "\n".join(" " + p for p in state.midi.getInPorts()))
     logger.info("Available MIDI output ports:\n%s",
-                "\n".join(" " + p for p in midi.getOutPorts()))
+                "\n".join(" " + p for p in state.midi.getOutPorts()))
 
-    if not midi.openLibreMidiOutPort(MIDI_OUTPUT_NAME, MIDI_OUTPUT_INDEX):
-        logger.error("Failed to open MIDI output port. "
-                     "Ensure MidiRouterClient created the virtual port.")
+    if not state.midi.openLibreMidiOutPort(MIDI_OUTPUT_NAME, MIDI_OUTPUT_INDEX):
+        logger.error("Failed to open MIDI output port.")
         sys.exit(1)
 
-    midiOutPort = midi.getLibreMidiOutPort(MIDI_OUTPUT_NAME, MIDI_OUTPUT_INDEX)
+    state.midi_out = state.midi.getLibreMidiOutPort(MIDI_OUTPUT_NAME, MIDI_OUTPUT_INDEX)
 
-    midiOutPort.sendNoteOn(0, novation_flaps_led_id, novation_color_off)
-    midiOutPort.sendNoteOn(0, novation_air_speed_id, novation_color_off)
+    # Initialize LEDs
+    state.midi_out.sendNoteOn(0, FLAPS_LED_ID, COLOR["off"])
+    state.midi_out.sendNoteOn(0, AIR_SPEED_LED_ID, COLOR["off"])
 
     terminal_mode = False
 
     try:
-        if not midi.startMidiClient():
+        if not state.midi.startMidiClient():
             logger.error("Failed to start MIDI client.")
             sys.exit(1)
 
         while True:
-            if midi.getIsTelnetRunning():
+            if state.midi.getIsTelnetRunning():
                 user_input = input()
 
                 if not terminal_mode:
@@ -284,16 +246,16 @@ def main() -> None:
                     break
                 elif user_input == "t":
                     terminal_mode = not terminal_mode
-                    midi.setIsTerminalDebugMode(terminal_mode)
+                    state.midi.setIsTerminalDebugMode(terminal_mode)
                     if terminal_mode:
-                        logger.info("Terminal mode enabled. Press 't' to exit.")
+                        logger.info("Terminal mode enabled.")
                 elif terminal_mode:
-                    midi.sendTerminalRaw(user_input)
+                    state.midi.sendTerminalRaw(user_input)
 
             else:
-                if midi.getIsTelnetDisconnectedSignal():
+                if state.midi.getIsTelnetDisconnectedSignal():
                     logger.warning("Disconnected. Attempting restart...")
-                    midi.startMidiClient()
+                    state.midi.startMidiClient()
                 else:
                     logger.info("Not Connected\n r=restart q=quit")
                     user_input = input()
@@ -301,15 +263,11 @@ def main() -> None:
                     if user_input == "q":
                         break
                     elif user_input == "r":
-                        midi.startMidiClient()
+                        state.midi.startMidiClient()
 
     except Exception as e:
-        logger.exception("Unhandled exception occurred: %s", e)
+        logger.exception("Unhandled exception: %s", e)
 
-
-# ---------------------------------------------------------------------------
-# ENTRY POINT
-# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     main()
