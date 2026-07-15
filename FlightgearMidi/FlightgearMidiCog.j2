@@ -1,0 +1,65 @@
+// Bind the vector types FIRST
+{% for itm in m.global_bindings.opaque_item_types -%}
+PYBIND11_MAKE_OPAQUE({{ itm }});
+{% endfor -%}
+
+PYBIND11_MODULE({{ m.module_name }}, m)
+{
+    // Expose vectors so Python can append(), index, iterate, etc.
+    {%- for vec in m.opaque_vectors %}
+    py::bind_vector<{{ vec.vector_type }}>(m, "{{ vec.py_name }}");
+    {%- endfor %}
+
+    // module-level functions
+    {%- for fn in m.defs %}
+    m.def("{{ fn }}", &{{ fn }});
+    {%- endfor %}
+
+    // enums
+    {%- for en in m.enums %}
+    py::enum_<{{ en.name }}>(m, "{{ en.name }}")
+        {%- for elm in en.elements %}
+        .value("{{ elm }}", {{ en.name }}::{{ elm }})
+        {%- endfor %}
+        ;
+    {%- endfor %}
+
+    // classes
+    {%- for cls in m.classes %}
+    py::class_<{{ cls.name }}
+        {%- if cls.is_shared_pointer -%}
+        , std::shared_ptr<{{ cls.name }}>
+        {%- endif -%}
+        >(m, "{{ cls.name }}")
+
+        {%- if cls.has_constructor %}
+        .def(py::init<>())
+        {%- endif %}
+
+        {%- for fn in cls.defs %}
+        .def("{{ fn }}", &{{ cls.name }}::{{ fn }})
+        {%- endfor %}
+
+        {%- for fn in cls.defs_pointer %}
+        .def("{{ fn }}", &{{ cls.name }}::{{ fn }},
+             py::return_value_policy::reference_internal)
+        {%- endfor %}
+
+        {%- for rw in cls.defs_rw %}
+        .def_readwrite("{{ rw }}", &{{ cls.name }}::{{ rw }})
+        {%- endfor %}
+
+        {%- for cb in cls.defs_callback %}
+        .def_property(
+            "{{ cb.name }}",
+            []({{ cls.name }} &self) {
+                return self.{{ cb.name }};
+            },
+            []({{ cls.name }} &self, std::function<{{ cb.signature }}> cb) {
+                self.{{ cb.name }} = cb;
+            }
+        )
+        {%- endfor %}
+    ;
+    {%- endfor %}
+}

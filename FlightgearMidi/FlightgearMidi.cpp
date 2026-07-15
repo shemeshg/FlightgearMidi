@@ -7,35 +7,44 @@
 #include "TelnetClient.h"
 
 namespace py = pybind11;
-
+/*[[[cog
+import cog
+from FlightgearMidiCog import getText
+cog.outl(getText())
+]]] */
 // Bind the vector types FIRST
 PYBIND11_MAKE_OPAQUE(std::vector<DataConfigMidiInput>);
 PYBIND11_MAKE_OPAQUE(std::vector<DataConfigPullerFgKey>);
 PYBIND11_MAKE_OPAQUE(std::vector<std::shared_ptr<DataConfigFromMidiToTelnet>>);
-
-
 PYBIND11_MODULE(FlightgearMidi, m)
 {
     // Expose vectors so Python can append(), index, iterate, etc.
     py::bind_vector<std::vector<DataConfigMidiInput>>(m, "DataConfigMidiInputList");
     py::bind_vector<std::vector<DataConfigPullerFgKey>>(m, "DataConfigPullerFgKeyList");
-    py::bind_vector<std::vector<std::shared_ptr<DataConfigFromMidiToTelnet>>>(m, "DataConfigFromMidiToTelnetList");   
+    py::bind_vector<std::vector<std::shared_ptr<DataConfigFromMidiToTelnet>>>(m, "DataConfigFromMidiToTelnetList");
 
-    // TelnetClient
+    // module-level functions
+    m.def("getMidiClientItf", &getMidiClientItf);
+
+    // enums
+    py::enum_<MidiMsgType>(m, "MidiMsgType")
+        .value("CONTROL_CHANGE", MidiMsgType::CONTROL_CHANGE)
+        .value("NOTE_ON", MidiMsgType::NOTE_ON)
+        .value("NOTE_OFF", MidiMsgType::NOTE_OFF)
+        ;
+
+    // classes
     py::class_<TelnetClient>(m, "TelnetClient")
         .def(py::init<>())
         .def("openSocket", &TelnetClient::openSocket)
         .def("getCmd", &TelnetClient::getCmd)
-        .def("stop", &TelnetClient::stop);
-
-    //LibreMidiOutPort
+        .def("stop", &TelnetClient::stop)
+    ;
     py::class_<LibreMidiOutPort>(m, "LibreMidiOutPort")
         .def("sendNoteOn", &LibreMidiOutPort::sendNoteOn)
         .def("sendNoteOff", &LibreMidiOutPort::sendNoteOff)
         .def("sendControlChange", &LibreMidiOutPort::sendControlChange)
-            ;    
-
-    // MidiClientItf
+    ;
     py::class_<MidiClientItf, std::shared_ptr<MidiClientItf>>(m, "MidiClientItf")
         .def("getDataConfig", &MidiClientItf::getDataConfig)
         .def("setDataConfig", &MidiClientItf::setDataConfig)
@@ -46,19 +55,11 @@ PYBIND11_MODULE(FlightgearMidi, m)
         .def("setIsTerminalDebugMode", &MidiClientItf::setIsTerminalDebugMode)
         .def("sendTerminalRaw", &MidiClientItf::sendTerminalRaw)
         .def("getIsTelnetDisconnectedSignal", &MidiClientItf::getIsTelnetDisconnectedSignal)
+        .def("openLibreMidiOutPort", &MidiClientItf::openLibreMidiOutPort)
         .def("getLibreMidiOutPort", &MidiClientItf::getLibreMidiOutPort,
              py::return_value_policy::reference_internal)
-        .def("openLibreMidiOutPort", &MidiClientItf::openLibreMidiOutPort)
         .def_readwrite("pullerSleepInterval", &MidiClientItf::pullerSleepInterval)
-        ;
-
-    // Enum
-    py::enum_<MidiMsgType>(m, "MidiMsgType")
-        .value("CONTROL_CHANGE", MidiMsgType::CONTROL_CHANGE)
-        .value("NOTE_ON", MidiMsgType::NOTE_ON)
-        .value("NOTE_OFF", MidiMsgType::NOTE_OFF);
-
-    // DataConfigFromMidiToTelnet
+    ;
     py::class_<DataConfigFromMidiToTelnet, std::shared_ptr<DataConfigFromMidiToTelnet>>(m, "DataConfigFromMidiToTelnet")
         .def(py::init<>())
         .def_readwrite("fromStart", &DataConfigFromMidiToTelnet::fromStart)
@@ -72,46 +73,39 @@ PYBIND11_MODULE(FlightgearMidi, m)
         .def_readwrite("isCallback", &DataConfigFromMidiToTelnet::isCallback)
         .def_property(
             "callback",
-            [](DataConfigFromMidiToTelnet &self)
-            {
+            [](DataConfigFromMidiToTelnet &self) {
                 return self.callback;
             },
-            [](DataConfigFromMidiToTelnet &self, std::function<void(std::vector<int>)> cb)
-            {
+            [](DataConfigFromMidiToTelnet &self, std::function<void(std::vector<int>)> cb) {
                 self.callback = cb;
-            });        
-        ;
-     
-    // DataConfigMidiInput
+            }
+        )
+    ;
     py::class_<DataConfigMidiInput>(m, "DataConfigMidiInput")
         .def(py::init<>())
         .def_readwrite("midiInputIdx", &DataConfigMidiInput::midiInputIdx)
         .def_readwrite("midiInputName", &DataConfigMidiInput::midiInputName)
-        .def_readwrite("dataConfigFromMidiToTelnets", &DataConfigMidiInput::dataConfigFromMidiToTelnets);
-
-    // DataConfigPullerFgKey
+        .def_readwrite("dataConfigFromMidiToTelnets", &DataConfigMidiInput::dataConfigFromMidiToTelnets)
+    ;
     py::class_<DataConfigPullerFgKey>(m, "DataConfigPullerFgKey")
         .def(py::init<>())
         .def_readwrite("fgKetPath", &DataConfigPullerFgKey::fgKetPath)
         .def_property(
             "callback",
-            [](DataConfigPullerFgKey &self)
-            {
+            [](DataConfigPullerFgKey &self) {
                 return self.callback;
             },
-            [](DataConfigPullerFgKey &self, std::function<void(std::string, std::string)> cb)
-            {
+            [](DataConfigPullerFgKey &self, std::function<void(std::string, std::string)> cb) {
                 self.callback = cb;
-            });
-
-    // DataConfig
+            }
+        )
+    ;
     py::class_<DataConfig>(m, "DataConfig")
         .def(py::init<>())
         .def_readwrite("telnetHost", &DataConfig::telnetHost)
         .def_readwrite("telnetPort", &DataConfig::telnetPort)
         .def_readwrite("dataConfigMidiInputs", &DataConfig::dataConfigMidiInputs)
-        .def_readwrite("dataConfigPullerFgKeys", &DataConfig::dataConfigPullerFgKeys);
-
-    // Factory
-    m.def("getMidiClientItf", &getMidiClientItf);
+        .def_readwrite("dataConfigPullerFgKeys", &DataConfig::dataConfigPullerFgKeys)
+    ;
 }
+// [[[end]]]

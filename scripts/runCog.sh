@@ -18,3 +18,7 @@ cog -r pyproject.toml
 cd "$script_dir/.."
 cd MyLib
 cog -r CMakeLists.txt
+
+cd "$script_dir/.."
+cd FlightgearMidi
+cog -r FlightgearMidi.cpp
