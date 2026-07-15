@@ -1,31 +1,19 @@
-import os
-import sys
-import logging
-import threading
-import time
+from FlightgearMidiHelper import main_loop, add_mapping, FlightgearMidi, logger
 from dataclasses import dataclass
-from typing import Optional, Any
-
+import sys
 # ---------------------------------------------------------------------------
-# MODULE PATH SETUP
-# ---------------------------------------------------------------------------
-
-script_dir = os.path.dirname(os.path.abspath(__file__))
-module_dir = os.path.join(script_dir, "..", "build", "FlightgearMidi")
-sys.path.append(module_dir)
-
-import FlightgearMidi
-print("Loaded module from:", FlightgearMidi.__file__)
-
-# ---------------------------------------------------------------------------
-# LOGGING
+# APP STATE
 # ---------------------------------------------------------------------------
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-)
-logger = logging.getLogger(__name__)
+@dataclass
+class AppState:
+    midi: Optional[Any] = None
+    midi_out: Optional[Any] = None
+    previous_air_speed: Optional[int] = None
+    carb_heat_on: bool = False
+
+state = AppState()
+
 
 # ---------------------------------------------------------------------------
 # CONSTANTS
@@ -39,6 +27,7 @@ MIDI_OUTPUT_INDEX = 0
 
 TELNET_HOST = "localhost"
 TELNET_PORT = "5500"
+
 
 # Novation LED colors
 COLOR = {
@@ -59,19 +48,6 @@ COLOR = {
 FLAPS_LED_ID = 13 + 16 * 0
 AIR_SPEED_LED_ID = 73
 CARB_HEAT_LED_ID = 105
-
-# ---------------------------------------------------------------------------
-# APP STATE
-# ---------------------------------------------------------------------------
-
-@dataclass
-class AppState:
-    midi: Optional[Any] = None
-    midi_out: Optional[Any] = None
-    previous_air_speed: Optional[int] = None
-    carb_heat_on: bool = False
-
-state = AppState()
 
 # ---------------------------------------------------------------------------
 # CALLBACKS
@@ -133,22 +109,6 @@ def flaps_on_callback(key: str, val: Any) -> None:
 
     state.midi_out.sendNoteOn(0, FLAPS_LED_ID, color)
 
-# ---------------------------------------------------------------------------
-# CONFIG CREATION
-# ---------------------------------------------------------------------------
-
-def add_mapping(midi_input, from_start, from_end, to_start, to_end, msg_type, channel, cc, cmd):
-    m = FlightgearMidi.DataConfigFromMidiToTelnet()
-    m.fromStart = from_start
-    m.fromEnd = from_end
-    m.toStart = to_start
-    m.toEnd = to_end
-    m.midiMsgType = msg_type
-    m.midiChannel = channel
-    m.notePitchOrCcChannel = cc
-    m.setCmd = cmd
-    midi_input.dataConfigFromMidiToTelnets.append(m)
-
 
 def loadConfigData() -> FlightgearMidi.DataConfig:
     cfg = FlightgearMidi.DataConfig()
@@ -199,93 +159,11 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
     return cfg
 
 
-
-class TelnetWorkerManager:
-    def __init__(self):
-        self.thread = None
-        self.stop_flag = False
-        self.max_attempts = 5
-        self.attempts = 0
-
-    def worker(self):
-        """Background telnet monitor."""
-        logger.info("Telnet worker started")
-        self.attempts = 0  # reset attempts on start
-
-        while not self.stop_flag:
-            time.sleep(2)
-
-            try:
-                running = state.midi.getIsTelnetRunning()
-                disconnected = state.midi.getIsTelnetDisconnectedSignal()
-
-                # If already running, reset attempts counter
-                if running:
-                    self.attempts = 0
-                    continue
-
-                # If not running OR disconnected → attempt reconnect
-                if not running or disconnected:
-                    if self.attempts >= self.max_attempts:
-                        logger.error("Max reconnect attempts reached (5). Giving up until manual restart.")
-                        break
-
-                    self.attempts += 1
-                    logger.warning(f"Reconnect attempt {self.attempts}/5...")
-
-                    ok = state.midi.startMidiClient()
-                    logger.info(f"Reconnect result: {ok}")
-
-                    # If reconnect succeeded → reset counter
-                    if ok:
-                        self.attempts = 0
-
-                    continue
-
-            except Exception as e:
-                logger.error(f"Reconnect thread error: {e}")
-
-        logger.info("Telnet worker stopped")
-
-    def start(self):
-        """Start worker if not running."""
-        if self.thread and self.thread.is_alive():
-            logger.info("Worker already running")
-            return
-
-        self.stop_flag = False
-        self.thread = threading.Thread(target=self.worker, daemon=True)
-        self.thread.start()
-        logger.info("Worker started")
-
-    def stop(self):
-        """Stop worker gracefully."""
-        if self.thread and self.thread.is_alive():
-            logger.info("Stopping worker...")
-            self.stop_flag = True
-            self.thread.join(timeout=2)
-            logger.info("Worker stopped")
-
-    def restart(self):
-        """Restart worker cleanly."""
-        logger.info("Restarting worker...")
-        self.stop()
-        self.start()
-
-
-
-
-
-# ---------------------------------------------------------------------------
-# MAIN LOOP
-# ---------------------------------------------------------------------------
-
-def main():
+if __name__ == "__main__":
+        
     state.midi = FlightgearMidi.getMidiClientItf()
     state.midi.pullerSleepInterval = 200
-
-    cfg = loadConfigData()
-    state.midi.setDataConfig(cfg)
+    state.midi.setDataConfig(loadConfigData())
 
     logger.info("Available MIDI input ports:\n%s",
                 "\n".join(" " + p for p in state.midi.getInPorts()))
@@ -299,52 +177,6 @@ def main():
     state.midi_out = state.midi.getLibreMidiOutPort(MIDI_OUTPUT_NAME, MIDI_OUTPUT_INDEX)
 
     state.midi_out.sendNoteOn(0, FLAPS_LED_ID, COLOR["off"])
-    state.midi_out.sendNoteOn(0, AIR_SPEED_LED_ID, COLOR["off"])
-
-    # NEW CLEAN WORKER
-    worker_mgr = TelnetWorkerManager()
-    worker_mgr.start()
-
-    terminal_mode = False
-
-    try:
-        if not state.midi.startMidiClient():
-            logger.error("Failed to start MIDI client.")
-            sys.exit(1)
-
-        while True:
-            if state.midi.getIsTelnetRunning():
-                user_input = input()
-
-                if not terminal_mode:
-                    logger.info("Connected\nq=quit\nt=toggle terminal mode")
-
-                if user_input == "q":
-                    break
-                elif user_input == "t":
-                    terminal_mode = not terminal_mode
-                    state.midi.setIsTerminalDebugMode(terminal_mode)
-                    if terminal_mode:
-                        logger.info("Terminal mode enabled.")
-                elif terminal_mode:
-                    state.midi.sendTerminalRaw(user_input)
-
-            else:
-                logger.info("Not Connected\n r=restart q=quit")
-                user_input = input()
-
-                if user_input == "q":
-                    break
-                elif user_input == "r":
-                    worker_mgr.restart()
-
-    except Exception as e:
-        logger.exception("Unhandled exception: %s", e)
-
-    finally:
-        worker_mgr.stop()
-
-
-
-if __name__ == "__main__":
-    main()
+    state.midi_out.sendNoteOn(0, AIR_SPEED_LED_ID, COLOR["off"])    
+     
+    main_loop(state.midi)
