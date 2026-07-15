@@ -198,25 +198,83 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
 
     return cfg
 
-# ---------------------------------------------------------------------------
-# BACKGROUND TELNET RECONNECT THREAD
-# ---------------------------------------------------------------------------
 
-def telnet_reconnect_worker():
-    """Check telnet status every 5 seconds and reconnect once if needed."""
-    while True:
-        time.sleep(5)
 
-        try:
-            if state.midi.getIsTelnetRunning():
-                continue
+class TelnetWorkerManager:
+    def __init__(self):
+        self.thread = None
+        self.stop_flag = False
+        self.max_attempts = 5
+        self.attempts = 0
 
-            if state.midi.getIsTelnetDisconnectedSignal():
-                logger.warning("Background: Telnet disconnected, attempting reconnect...")
-                state.midi.startMidiClient()
+    def worker(self):
+        """Background telnet monitor."""
+        logger.info("Telnet worker started")
+        self.attempts = 0  # reset attempts on start
 
-        except Exception as e:
-            logger.error(f"Reconnect thread error: {e}")
+        while not self.stop_flag:
+            time.sleep(2)
+
+            try:
+                running = state.midi.getIsTelnetRunning()
+                disconnected = state.midi.getIsTelnetDisconnectedSignal()
+
+                # If already running, reset attempts counter
+                if running:
+                    self.attempts = 0
+                    continue
+
+                # If not running OR disconnected → attempt reconnect
+                if not running or disconnected:
+                    if self.attempts >= self.max_attempts:
+                        logger.error("Max reconnect attempts reached (5). Giving up until manual restart.")
+                        break
+
+                    self.attempts += 1
+                    logger.warning(f"Reconnect attempt {self.attempts}/5...")
+
+                    ok = state.midi.startMidiClient()
+                    logger.info(f"Reconnect result: {ok}")
+
+                    # If reconnect succeeded → reset counter
+                    if ok:
+                        self.attempts = 0
+
+                    continue
+
+            except Exception as e:
+                logger.error(f"Reconnect thread error: {e}")
+
+        logger.info("Telnet worker stopped")
+
+    def start(self):
+        """Start worker if not running."""
+        if self.thread and self.thread.is_alive():
+            logger.info("Worker already running")
+            return
+
+        self.stop_flag = False
+        self.thread = threading.Thread(target=self.worker, daemon=True)
+        self.thread.start()
+        logger.info("Worker started")
+
+    def stop(self):
+        """Stop worker gracefully."""
+        if self.thread and self.thread.is_alive():
+            logger.info("Stopping worker...")
+            self.stop_flag = True
+            self.thread.join(timeout=2)
+            logger.info("Worker stopped")
+
+    def restart(self):
+        """Restart worker cleanly."""
+        logger.info("Restarting worker...")
+        self.stop()
+        self.start()
+
+
+
+
 
 # ---------------------------------------------------------------------------
 # MAIN LOOP
@@ -243,7 +301,9 @@ def main():
     state.midi_out.sendNoteOn(0, FLAPS_LED_ID, COLOR["off"])
     state.midi_out.sendNoteOn(0, AIR_SPEED_LED_ID, COLOR["off"])
 
-    threading.Thread(target=telnet_reconnect_worker, daemon=True).start()
+    # NEW CLEAN WORKER
+    worker_mgr = TelnetWorkerManager()
+    worker_mgr.start()
 
     terminal_mode = False
 
@@ -276,10 +336,14 @@ def main():
                 if user_input == "q":
                     break
                 elif user_input == "r":
-                    state.midi.startMidiClient()
+                    worker_mgr.restart()
 
     except Exception as e:
         logger.exception("Unhandled exception: %s", e)
+
+    finally:
+        worker_mgr.stop()
+
 
 
 if __name__ == "__main__":
