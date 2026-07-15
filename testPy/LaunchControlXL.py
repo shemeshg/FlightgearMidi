@@ -1,6 +1,14 @@
-from FlightgearMidiHelper import main_loop, add_mapping, FlightgearMidi, logger
 from dataclasses import dataclass
-import sys
+from typing import Any, Optional, Callable, List, Tuple
+
+from FlightgearMidiHelper import (
+    main_loop,
+    add_mappings,
+    add_pullers,
+    FlightgearMidi,
+    logger,
+)
+
 # ---------------------------------------------------------------------------
 # APP STATE
 # ---------------------------------------------------------------------------
@@ -9,11 +17,11 @@ import sys
 class AppState:
     midi: Optional[Any] = None
     midi_out: Optional[Any] = None
-    previous_air_speed: Optional[int] = None
+    previous_air_speed_color: Optional[int] = None
     carb_heat_on: bool = False
 
-state = AppState()
 
+state = AppState()
 
 # ---------------------------------------------------------------------------
 # CONSTANTS
@@ -28,8 +36,6 @@ MIDI_OUTPUT_INDEX = 0
 TELNET_HOST = "localhost"
 TELNET_PORT = "5500"
 
-
-# Novation LED colors
 COLOR = {
     "off": 12,
     "red_dim": 13,
@@ -68,28 +74,26 @@ def pull_indicated_air_speed_callback(key: str, val: Any) -> None:
     else:
         color = COLOR["red"]
 
-    if color != state.previous_air_speed:
-        state.previous_air_speed = color
+    if color != state.previous_air_speed_color:
+        state.previous_air_speed_color = color
         state.midi_out.sendNoteOn(0, AIR_SPEED_LED_ID, color)
 
 
 def pull_carb_heat_callback(key: str, val: str) -> None:
     v = val.strip().lower()
-
-    if v == "true":
-        carb = 1
-    elif v == "false":
-        carb = 0
-    else:
+    if v not in ("true", "false"):
         return
 
-    state.midi_out.sendNoteOn(0, CARB_HEAT_LED_ID, 127 if carb == 1 else 0)
+    carb_on = (v == "true")
+    state.midi_out.sendNoteOn(0, CARB_HEAT_LED_ID, 127 if carb_on else 0)
 
 
 def carb_heat_toggle_callback(val: Any) -> None:
     state.carb_heat_on = not state.carb_heat_on
     cmd = "true" if state.carb_heat_on else "false"
-    state.midi.sendTerminalRaw(f"set /controls/engines/current-engine/carb-heat {cmd}")
+    state.midi.sendTerminalRaw(
+        f"set /controls/engines/current-engine/carb-heat {cmd}"
+    )
 
 
 def flaps_on_callback(key: str, val: Any) -> None:
@@ -109,16 +113,21 @@ def flaps_on_callback(key: str, val: Any) -> None:
 
     state.midi_out.sendNoteOn(0, FLAPS_LED_ID, color)
 
+# ---------------------------------------------------------------------------
+# CONFIG LOADING
+# ---------------------------------------------------------------------------
 
 def loadConfigData() -> FlightgearMidi.DataConfig:
     cfg = FlightgearMidi.DataConfig()
     cfg.telnetHost = TELNET_HOST
     cfg.telnetPort = TELNET_PORT
 
+    # MIDI input configuration
     midi_input = FlightgearMidi.DataConfigMidiInput()
     midi_input.midiInputIdx = MIDI_INPUT_INDEX
     midi_input.midiInputName = MIDI_INPUT_NAME
 
+    # CC → Telnet mappings
     mappings = [
         (0, 127, 0, 1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 77,
          "/controls/engines/engine[0]/throttle"),
@@ -132,9 +141,9 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
          "/controls/engines/current-engine/mixture"),
     ]
 
-    for args in mappings:
-        add_mapping(midi_input, *args)
+    add_mappings(midi_input, mappings)
 
+    # Carb heat toggle (NOTE ON → callback)
     carb_heat = FlightgearMidi.DataConfigFromMidiToTelnet()
     carb_heat.midiMsgType = FlightgearMidi.MidiMsgType.NOTE_ON
     carb_heat.notePitchOrCcChannel = CARB_HEAT_LED_ID
@@ -144,23 +153,24 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
 
     cfg.dataConfigMidiInputs.append(midi_input)
 
-    def add_puller(path, cb):
-        p = FlightgearMidi.DataConfigPullerFgKey()
-        p.fgKetPath = path
-        p.callback = cb
-        cfg.dataConfigPullerFgKeys.append(p)
+    # Pullers (FG → callbacks)
+    pullers: List[Tuple[str, Callable]] = [
+        ("/controls/flight/flaps", flaps_on_callback),
+        ("/instrumentation/airspeed-indicator/indicated-speed-kt",
+         pull_indicated_air_speed_callback),
+        ("/controls/engines/current-engine/carb-heat",
+         pull_carb_heat_callback),
+    ]
 
-    add_puller("/controls/flight/flaps", flaps_on_callback)
-    add_puller("/instrumentation/airspeed-indicator/indicated-speed-kt",
-               pull_indicated_air_speed_callback)
-    add_puller("/controls/engines/current-engine/carb-heat",
-               pull_carb_heat_callback)
+    add_pullers(cfg.dataConfigPullerFgKeys, pullers)
 
     return cfg
 
+# ---------------------------------------------------------------------------
+# MAIN
+# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-        
     state.midi = FlightgearMidi.getMidiClientItf()
     state.midi.pullerSleepInterval = 200
     state.midi.setDataConfig(loadConfigData())
@@ -174,9 +184,12 @@ if __name__ == "__main__":
         logger.error("Failed to open MIDI output port.")
         sys.exit(1)
 
-    state.midi_out = state.midi.getLibreMidiOutPort(MIDI_OUTPUT_NAME, MIDI_OUTPUT_INDEX)
+    state.midi_out = state.midi.getLibreMidiOutPort(
+        MIDI_OUTPUT_NAME, MIDI_OUTPUT_INDEX
+    )
 
+    # Initialize LEDs
     state.midi_out.sendNoteOn(0, FLAPS_LED_ID, COLOR["off"])
-    state.midi_out.sendNoteOn(0, AIR_SPEED_LED_ID, COLOR["off"])    
-     
+    state.midi_out.sendNoteOn(0, AIR_SPEED_LED_ID, COLOR["off"])
+
     main_loop(state.midi)

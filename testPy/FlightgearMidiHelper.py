@@ -4,7 +4,7 @@ import logging
 import threading
 import time
 from dataclasses import dataclass
-from typing import Optional, Any
+from typing import Any, Iterable, Tuple
 
 # ---------------------------------------------------------------------------
 # MODULE PATH SETUP
@@ -27,12 +27,22 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 # ---------------------------------------------------------------------------
-# CONFIG CREATION
+# CONFIG HELPERS
 # ---------------------------------------------------------------------------
 
-def add_mapping(midi_input, from_start, from_end, to_start, to_end, msg_type, channel, cc, cmd):
+def add_mapping(
+    midi_input: FlightgearMidi.DataConfigMidiInput,
+    from_start: int,
+    from_end: int,
+    to_start: int,
+    to_end: int,
+    msg_type: int,
+    channel: int,
+    cc: int,
+    cmd: str,
+) -> None:
+    """Create and append a single MIDI→Telnet mapping."""
     m = FlightgearMidi.DataConfigFromMidiToTelnet()
     m.fromStart = from_start
     m.fromEnd = from_end
@@ -45,100 +55,115 @@ def add_mapping(midi_input, from_start, from_end, to_start, to_end, msg_type, ch
     midi_input.dataConfigFromMidiToTelnets.append(m)
 
 
+def add_mappings(
+    midi_input: FlightgearMidi.DataConfigMidiInput,
+    mappings: Iterable[Tuple[Any, ...]],
+) -> None:
+    """Add multiple MIDI→Telnet mappings."""
+    for args in mappings:
+        add_mapping(midi_input, *args)
+
+
+def add_pullers(
+    puller_list: list,
+    pullers: Iterable[Tuple[str, Any]],
+) -> None:
+    """Add FG→callback pullers."""
+    for path, cb in pullers:
+        p = FlightgearMidi.DataConfigPullerFgKey()
+        p.fgKetPath = path
+        p.callback = cb
+        puller_list.append(p)
+
+# ---------------------------------------------------------------------------
+# TELNET WORKER
+# ---------------------------------------------------------------------------
+
 class TelnetWorkerManager:
+    """Background worker that monitors and reconnects the Telnet interface."""
+
     def __init__(self, midiClientItf: FlightgearMidi.MidiClientItf):
-        self.thread = None
+        self.midi = midiClientItf
+        self.thread: threading.Thread | None = None
         self.stop_flag = False
         self.max_attempts = 5
         self.attempts = 0
-        self.midiClientItf = midiClientItf
 
-    def worker(self):
-        """Background telnet monitor."""
+    def worker(self) -> None:
         logger.info("Telnet worker started")
-        self.attempts = 0  # reset attempts on start
+        self.attempts = 0
 
         while not self.stop_flag:
             time.sleep(2)
 
             try:
-                running = self.midiClientItf.getIsTelnetRunning()
-                disconnected = self.midiClientItf.getIsTelnetDisconnectedSignal()
+                running = self.midi.getIsTelnetRunning()
+                disconnected = self.midi.getIsTelnetDisconnectedSignal()
 
-                # If already running, reset attempts counter
                 if running:
                     self.attempts = 0
                     continue
 
-                # If not running OR disconnected → attempt reconnect
-                if not running or disconnected:
-                    if self.attempts >= self.max_attempts:
-                        logger.error("Max reconnect attempts reached (5). Giving up until manual restart.")
-                        break
+                # Need reconnect
+                if self.attempts >= self.max_attempts:
+                    logger.error("Max reconnect attempts reached. Waiting for manual restart.")
+                    break
 
-                    self.attempts += 1
-                    logger.warning(f"Reconnect attempt {self.attempts}/5...")
+                self.attempts += 1
+                logger.warning(f"Reconnect attempt {self.attempts}/{self.max_attempts}...")
 
-                    ok = self.midiClientItf.startMidiClient()
-                    logger.info(f"Reconnect result: {ok}")
+                ok = self.midi.startMidiClient()
+                logger.info(f"Reconnect result: {ok}")
 
-                    # If reconnect succeeded → reset counter
-                    if ok:
-                        self.attempts = 0
-
-                    continue
+                if ok:
+                    self.attempts = 0
 
             except Exception as e:
-                logger.error(f"Reconnect thread error: {e}")
+                logger.error(f"Telnet worker error: {e}")
 
         logger.info("Telnet worker stopped")
 
-    def start(self):
-        """Start worker if not running."""
+    def start(self) -> None:
         if self.thread and self.thread.is_alive():
-            logger.info("Worker already running")
+            logger.info("Telnet worker already running")
             return
 
         self.stop_flag = False
         self.thread = threading.Thread(target=self.worker, daemon=True)
         self.thread.start()
-        logger.info("Worker started")
+        logger.info("Telnet worker started")
 
-    def stop(self):
-        """Stop worker gracefully."""
+    def stop(self) -> None:
         if self.thread and self.thread.is_alive():
-            logger.info("Stopping worker...")
+            logger.info("Stopping Telnet worker...")
             self.stop_flag = True
             self.thread.join(timeout=2)
-            logger.info("Worker stopped")
+            logger.info("Telnet worker stopped")
 
-    def restart(self):
-        """Restart worker cleanly."""
-        logger.info("Restarting worker...")
+    def restart(self) -> None:
+        logger.info("Restarting Telnet worker...")
         self.stop()
         self.start()
-
 
 # ---------------------------------------------------------------------------
 # MAIN LOOP
 # ---------------------------------------------------------------------------
 
-def main_loop(midiClientItf: FlightgearMidi.MidiClientItf):
+def main_loop(midi: FlightgearMidi.MidiClientItf) -> None:
+    """Interactive console loop with automatic Telnet monitoring."""
 
-
-    # NEW CLEAN WORKER
-    worker_mgr = TelnetWorkerManager(midiClientItf)
+    worker_mgr = TelnetWorkerManager(midi)
     worker_mgr.start()
 
     terminal_mode = False
 
     try:
-        if not midiClientItf.startMidiClient():
+        if not midi.startMidiClient():
             logger.error("Failed to start MIDI client.")
             sys.exit(1)
 
         while True:
-            if midiClientItf.getIsTelnetRunning():
+            if midi.getIsTelnetRunning():
                 user_input = input()
 
                 if not terminal_mode:
@@ -148,11 +173,11 @@ def main_loop(midiClientItf: FlightgearMidi.MidiClientItf):
                     break
                 elif user_input == "t":
                     terminal_mode = not terminal_mode
-                    midiClientItf.setIsTerminalDebugMode(terminal_mode)
+                    midi.setIsTerminalDebugMode(terminal_mode)
                     if terminal_mode:
                         logger.info("Terminal mode enabled.")
                 elif terminal_mode:
-                    midiClientItf.sendTerminalRaw(user_input)
+                    midi.sendTerminalRaw(user_input)
 
             else:
                 logger.info("Not Connected\n r=restart q=quit")
@@ -168,7 +193,6 @@ def main_loop(midiClientItf: FlightgearMidi.MidiClientItf):
 
     finally:
         worker_mgr.stop()
-
 
 
 if __name__ == "__main__":
