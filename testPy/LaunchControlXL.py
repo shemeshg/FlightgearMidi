@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Any, Optional, Callable, List, Tuple
+import sys
 
 from FlightgearMidiHelper import (
     main_loop,
