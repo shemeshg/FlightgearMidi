@@ -25,15 +25,15 @@ PYBIND11_MODULE(FlightgearMidi, m)
     // TelnetClient
     py::class_<TelnetClient>(m, "TelnetClient")
         .def(py::init<>())
-        .def("open_socket", &TelnetClient::openSocket)
-        .def("get_cmd", &TelnetClient::getCmd)
+        .def("openSocket", &TelnetClient::openSocket)
+        .def("getCmd", &TelnetClient::getCmd)
         .def("stop", &TelnetClient::stop);
 
     //LibreMidiOutPort
     py::class_<LibreMidiOutPort>(m, "LibreMidiOutPort")
         .def("sendNoteOn", &LibreMidiOutPort::sendNoteOn)
-        .def("sendNoteOn", &LibreMidiOutPort::sendNoteOff)
-        .def("sendNoteOn", &LibreMidiOutPort::sendControlChange)
+        .def("sendNoteOff", &LibreMidiOutPort::sendNoteOff)
+        .def("sendControlChange", &LibreMidiOutPort::sendControlChange)
             ;    
 
     // MidiClientItf
