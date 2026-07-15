@@ -10,7 +10,6 @@ namespace py = pybind11;
 
 // Bind the vector types FIRST
 PYBIND11_MAKE_OPAQUE(std::vector<DataConfigMidiInput>);
-PYBIND11_MAKE_OPAQUE(std::vector<DataConfigFromMidiToTelnet>);
 PYBIND11_MAKE_OPAQUE(std::vector<DataConfigPullerFgKey>);
 PYBIND11_MAKE_OPAQUE(std::vector<std::shared_ptr<DataConfigFromMidiToTelnet>>);
 
@@ -19,8 +18,8 @@ PYBIND11_MODULE(FlightgearMidi, m)
 {
     // Expose vectors so Python can append(), index, iterate, etc.
     py::bind_vector<std::vector<DataConfigMidiInput>>(m, "DataConfigMidiInputList");
-    py::bind_vector<std::vector<DataConfigFromMidiToTelnet>>(m, "DataConfigFromMidiToTelnetList");
     py::bind_vector<std::vector<DataConfigPullerFgKey>>(m, "DataConfigPullerFgKeyList");
+    py::bind_vector<std::vector<std::shared_ptr<DataConfigFromMidiToTelnet>>>(m, "DataConfigFromMidiToTelnetList");   
 
     // TelnetClient
     py::class_<TelnetClient>(m, "TelnetClient")
@@ -82,8 +81,7 @@ PYBIND11_MODULE(FlightgearMidi, m)
                 self.callback = cb;
             });        
         ;
-
-     py::bind_vector<std::vector<std::shared_ptr<DataConfigFromMidiToTelnet>>>(m, "VectorDataConfigFromMidiToTelnet");   
+     
     // DataConfigMidiInput
     py::class_<DataConfigMidiInput>(m, "DataConfigMidiInput")
         .def(py::init<>())
