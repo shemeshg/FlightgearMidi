@@ -45,10 +45,6 @@ def add_mapping(midi_input, from_start, from_end, to_start, to_end, msg_type, ch
     midi_input.dataConfigFromMidiToTelnets.append(m)
 
 
-
-
-
-
 class TelnetWorkerManager:
     def __init__(self, midiClientItf: FlightgearMidi.MidiClientItf):
         self.thread = None
@@ -121,9 +117,6 @@ class TelnetWorkerManager:
         logger.info("Restarting worker...")
         self.stop()
         self.start()
-
-
-
 
 
 # ---------------------------------------------------------------------------
