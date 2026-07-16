@@ -1,9 +1,6 @@
 from dataclasses import dataclass
 from typing import Any, Optional
 import sys
-import threading
-import queue
-import time
 
 from FlightgearMidiHelper import (
     main_loop,
@@ -69,22 +66,6 @@ LANDING_LIGHTS_LED_ID = 106
 TAXI_LIGHT_LED_ID = 107
 
 # ---------------------------------------------------------------------------
-# GLOBAL THROTTLED SENDER
-# ---------------------------------------------------------------------------
-
-command_queue = queue.Queue()
-
-def midi_worker():
-    while True:
-        key, cmd = command_queue.get()
-        try:
-            state.midi.sendTerminalRaw(f"set {key} {cmd}")
-        except Exception as e:
-            logger.error("Error sending MIDI terminal command: %s", e)
-        time.sleep(0.1)  # 100 ms throttle
-
-
-# ---------------------------------------------------------------------------
 # CALLBACKS
 # ---------------------------------------------------------------------------
 
@@ -118,12 +99,13 @@ def pull_on_off_callback(btn_id: int, key: str, val: str) -> None:
 
 
 def on_off_toggle_callback(key: str, val: Any) -> None:
+    # Per-property toggle state
     prev = state.toggle_states.get(key, False)
     new = not prev
     state.toggle_states[key] = new
 
     cmd = "true" if new else "false"
-    command_queue.put((key, cmd))
+    state.midi.sendTerminalRaw(f"set {key} {cmd}")
 
 
 def flaps_on_callback(key: str, val: Any) -> None:
@@ -224,7 +206,5 @@ if __name__ == "__main__":
 
     state.midi_out.sendNoteOn(0, FLAPS_LED_ID, COLOR["off"])
     state.midi_out.sendNoteOn(0, AIR_SPEED_LED_ID, COLOR["off"])
-
-    threading.Thread(target=midi_worker, daemon=True).start()
 
     main_loop(state.midi)
