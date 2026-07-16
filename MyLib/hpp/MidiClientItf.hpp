@@ -18,7 +18,7 @@
 class MidiClientItf
 {
 public:
-    int pullerSleepInterval = 2000;
+    int pullerSleepInterval = 100;
     virtual bool startMidiClient() = 0;
     virtual std::vector<std::string>  getInPorts() = 0;
     virtual std::vector<std::string>  getOutPorts() = 0;

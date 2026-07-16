@@ -50,13 +50,13 @@ public:
                             if (isPullerUnoderedMapValueChanged(puller.fgKetPath, pullVal)){
                                 puller.callback(puller.fgKetPath, pullVal);
                             }
-                            
+                            if (pullerSleepInterval != 0){
+                                std::this_thread::sleep_for(std::chrono::milliseconds(pullerSleepInterval));
+                            }                            
                         }                        
                     }
                     
-                    if (pullerSleepInterval != 0){
-                        std::this_thread::sleep_for(std::chrono::milliseconds(pullerSleepInterval));
-                    }
+
                     
                 }
 
