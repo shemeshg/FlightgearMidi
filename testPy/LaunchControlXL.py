@@ -192,7 +192,7 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
 
 if __name__ == "__main__":
     state.midi = FlightgearMidi.getMidiClientItf()
-    state.midi.pullerSleepInterval = 200
+    state.midi.pullerSleepInterval = 2000
     state.midi.setDataConfig(loadConfigData())
 
     logger.info("Available MIDI input ports:\n%s",
