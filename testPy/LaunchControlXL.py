@@ -50,11 +50,17 @@ COLOR = {
     "amber_dim": 29,
     "amber": 63,
     "amber_blink": 59,
+    "high": 127,
+    "low": 0
+
 }
 
 FLAPS_LED_ID = 13 + 16 * 0
 AIR_SPEED_LED_ID = 73
+
 CARB_HEAT_LED_ID = 105
+LANDING_LIGHTS_LED_ID = 106
+TAXI_LIGHT_LED_ID = 107
 
 # ---------------------------------------------------------------------------
 # CALLBACKS
@@ -80,14 +86,23 @@ def pull_indicated_air_speed_callback(key: str, val: Any) -> None:
         state.midi_out.sendNoteOn(0, AIR_SPEED_LED_ID, color)
 
 
-def pull_carb_heat_callback(key: str, val: str) -> None:
+def pull_on_off_callback(btn_id: int, key: str, val: str) -> None:
     v = val.strip().lower()
     if v not in ("true", "false"):
         return
 
     carb_on = (v == "true")
-    state.midi_out.sendNoteOn(0, CARB_HEAT_LED_ID, 127 if carb_on else 0)
+    state.midi_out.sendNoteOn(0, btn_id, COLOR["high"]  if carb_on else COLOR["low"] )
 
+
+
+
+def on_off_toggle_callback(key:str , val: Any) -> None:
+    state.carb_heat_on = not state.carb_heat_on
+    cmd = "true" if state.carb_heat_on else "false"
+    state.midi.sendTerminalRaw(
+        f"set {key} {cmd}"
+    )
 
 def carb_heat_toggle_callback(val: Any) -> None:
     state.carb_heat_on = not state.carb_heat_on
@@ -149,7 +164,7 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
     carb_heat.midiMsgType = FlightgearMidi.MidiMsgType.NOTE_ON
     carb_heat.notePitchOrCcChannel = CARB_HEAT_LED_ID
     carb_heat.isCallback = True
-    carb_heat.callback = carb_heat_toggle_callback
+    carb_heat.callback = lambda val: on_off_toggle_callback("/controls/engines/current-engine/carb-heat", val)
     midi_input.dataConfigFromMidiToTelnets.append(carb_heat)
 
     cfg.dataConfigMidiInputs.append(midi_input)
@@ -160,7 +175,8 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
         ("/instrumentation/airspeed-indicator/indicated-speed-kt",
          pull_indicated_air_speed_callback),
         ("/controls/engines/current-engine/carb-heat",
-         pull_carb_heat_callback),
+         lambda key,val: pull_on_off_callback(CARB_HEAT_LED_ID, key,val)
+        ),
     ]
 
     add_pullers(cfg.dataConfigPullerFgKeys, pullers)
