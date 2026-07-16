@@ -4,11 +4,14 @@ import sys
 
 from FlightgearMidiHelper import (
     main_loop,
+    FlightgearMidi,
+    logger,
+)
+
+from FlightgearMidiUtils import (
     add_mappings,
     add_callback_mappings,
     add_pullers,
-    FlightgearMidi,
-    logger,
 )
 
 # ---------------------------------------------------------------------------
