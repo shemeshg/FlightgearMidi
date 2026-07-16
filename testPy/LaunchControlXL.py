@@ -173,15 +173,14 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
             AIR_SPEED_LED_ID, pull_indicated_air_speed_callback),
     ]
 
-    for _, led_id, property_path in toggle_mappings:
-        puller_mappings.append((property_path, led_id, pull_on_off_callback))
+
 
 
     build_and_callback_pullers(
     cfg.dataConfigPullerFgKeys,
     puller_mappings,
     toggle_mappings,
-    pull_on_off_callback,   # passed explicitly
+    pull_on_off_callback,   
 )   
 
     return cfg
@@ -192,7 +191,7 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
 
 if __name__ == "__main__":
     state.midi = FlightgearMidi.getMidiClientItf()
-    state.midi.pullerSleepInterval = 2000
+    state.midi.pullerSleepInterval = 1000
     state.midi.setDataConfig(loadConfigData())
 
     logger.info("Available MIDI input ports:\n%s",
