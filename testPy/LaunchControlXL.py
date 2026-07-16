@@ -5,6 +5,7 @@ import sys
 from FlightgearMidiHelper import (
     main_loop,
     add_mappings,
+    add_callback_mappings,
     add_pullers,
     FlightgearMidi,
     logger,
@@ -160,12 +161,20 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
     add_mappings(midi_input, mappings)
 
     # Carb heat toggle (NOTE ON → callback)
-    carb_heat = FlightgearMidi.DataConfigFromMidiToTelnet()
-    carb_heat.midiMsgType = FlightgearMidi.MidiMsgType.NOTE_ON
-    carb_heat.notePitchOrCcChannel = CARB_HEAT_LED_ID
-    carb_heat.isCallback = True
-    carb_heat.callback = lambda val: on_off_toggle_callback("/controls/engines/current-engine/carb-heat", val)
-    midi_input.dataConfigFromMidiToTelnets.append(carb_heat)
+    def make_toggle_callback(property_path):
+        def _cb(val):
+            on_off_toggle_callback(property_path, val)
+        return _cb
+    
+    callback_mappings = [
+        (
+            FlightgearMidi.MidiMsgType.NOTE_ON, 
+            CARB_HEAT_LED_ID, 
+            make_toggle_callback("/controls/engines/current-engine/carb-heat")
+         )        
+    ]
+    add_callback_mappings(midi_input, callback_mappings)
+
 
     cfg.dataConfigMidiInputs.append(midi_input)
 

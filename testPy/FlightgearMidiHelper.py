@@ -64,6 +64,18 @@ def add_mappings(
         add_mapping(midi_input, *args)
 
 
+
+
+def add_callback_mappings(midi_input: FlightgearMidi.DataConfigMidiInput,
+    callback_mappings: Any) -> None:
+    for midiMsgType, notePitchOrCcChannel, callback in callback_mappings:
+        itm = FlightgearMidi.DataConfigFromMidiToTelnet()
+        itm.midiMsgType = midiMsgType
+        itm.notePitchOrCcChannel = notePitchOrCcChannel
+        itm.isCallback = True
+        itm.callback = callback
+        midi_input.dataConfigFromMidiToTelnets.append(itm)        
+
 def add_pullers(
     puller_list: list,
     pullers: Iterable[Tuple[str, Any]],
