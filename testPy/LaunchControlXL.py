@@ -1,6 +1,9 @@
 from dataclasses import dataclass
-from typing import Any, Optional, Callable, List, Tuple
+from typing import Any, Optional
 import sys
+import threading
+import queue
+import time
 
 from FlightgearMidiHelper import (
     main_loop,
@@ -23,9 +26,10 @@ class AppState:
     midi: Optional[Any] = None
     midi_out: Optional[Any] = None
     previous_air_speed_color: Optional[int] = None
-    carb_heat_on: bool = False
+    toggle_states: dict = None
 
 state = AppState()
+state.toggle_states = {}
 
 # ---------------------------------------------------------------------------
 # CONSTANTS
@@ -65,6 +69,22 @@ LANDING_LIGHTS_LED_ID = 106
 TAXI_LIGHT_LED_ID = 107
 
 # ---------------------------------------------------------------------------
+# GLOBAL THROTTLED SENDER
+# ---------------------------------------------------------------------------
+
+command_queue = queue.Queue()
+
+def midi_worker():
+    while True:
+        key, cmd = command_queue.get()
+        try:
+            state.midi.sendTerminalRaw(f"set {key} {cmd}")
+        except Exception as e:
+            logger.error("Error sending MIDI terminal command: %s", e)
+        time.sleep(0.1)  # 100 ms throttle
+
+
+# ---------------------------------------------------------------------------
 # CALLBACKS
 # ---------------------------------------------------------------------------
 
@@ -93,14 +113,17 @@ def pull_on_off_callback(btn_id: int, key: str, val: str) -> None:
     if v not in ("true", "false"):
         return
 
-    carb_on = (v == "true")
-    state.midi_out.sendNoteOn(0, btn_id, COLOR["high"] if carb_on else COLOR["low"])
+    is_on = (v == "true")
+    state.midi_out.sendNoteOn(0, btn_id, COLOR["high"] if is_on else COLOR["low"])
 
 
 def on_off_toggle_callback(key: str, val: Any) -> None:
-    state.carb_heat_on = not state.carb_heat_on
-    cmd = "true" if state.carb_heat_on else "false"
-    state.midi.sendTerminalRaw(f"set {key} {cmd}")
+    prev = state.toggle_states.get(key, False)
+    new = not prev
+    state.toggle_states[key] = new
+
+    cmd = "true" if new else "false"
+    command_queue.put((key, cmd))
 
 
 def flaps_on_callback(key: str, val: Any) -> None:
@@ -130,12 +153,10 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
     cfg.telnetHost = TELNET_HOST
     cfg.telnetPort = TELNET_PORT
 
-    # MIDI input configuration
     midi_input = FlightgearMidi.DataConfigMidiInput()
     midi_input.midiInputIdx = MIDI_INPUT_INDEX
     midi_input.midiInputName = MIDI_INPUT_NAME
 
-    # CC → Telnet mappings
     mappings = [
         (0, 127, 0, 1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 77,
          "/controls/engines/engine[0]/throttle"),
@@ -151,37 +172,31 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
 
     add_mappings(midi_input, mappings)
 
-    # Toggle mappings (MIDI → FG)
     toggle_mappings = [
         (FlightgearMidi.MidiMsgType.NOTE_ON, CARB_HEAT_LED_ID,
          "/controls/engines/current-engine/carb-heat"),
         (FlightgearMidi.MidiMsgType.NOTE_ON, LANDING_LIGHTS_LED_ID,
          "/controls/lighting/landing-lights"),
         (FlightgearMidi.MidiMsgType.NOTE_ON, TAXI_LIGHT_LED_ID,
-         "/controls/lighting/taxi-light ")                  
+         "/controls/lighting/taxi-light"),
     ]
 
     build_and_callback_mappings(midi_input, toggle_mappings, on_off_toggle_callback)
-    
 
     cfg.dataConfigMidiInputs.append(midi_input)
 
-    # Puller mappings (FG → LED)
     puller_mappings = [
         ("/controls/flight/flaps", FLAPS_LED_ID, flaps_on_callback),
         ("/instrumentation/airspeed-indicator/indicated-speed-kt",
-            AIR_SPEED_LED_ID, pull_indicated_air_speed_callback),
+         AIR_SPEED_LED_ID, pull_indicated_air_speed_callback),
     ]
 
-
-
-
     build_and_callback_pullers(
-    cfg.dataConfigPullerFgKeys,
-    puller_mappings,
-    toggle_mappings,
-    pull_on_off_callback,   
-)   
+        cfg.dataConfigPullerFgKeys,
+        puller_mappings,
+        toggle_mappings,
+        pull_on_off_callback,
+    )
 
     return cfg
 
@@ -207,8 +222,9 @@ if __name__ == "__main__":
         MIDI_OUTPUT_NAME, MIDI_OUTPUT_INDEX
     )
 
-    # Initialize LEDs
     state.midi_out.sendNoteOn(0, FLAPS_LED_ID, COLOR["off"])
     state.midi_out.sendNoteOn(0, AIR_SPEED_LED_ID, COLOR["off"])
+
+    threading.Thread(target=midi_worker, daemon=True).start()
 
     main_loop(state.midi)
