@@ -10,8 +10,8 @@ from FlightgearMidiHelper import (
 
 from FlightgearMidiUtils import (
     add_mappings,
-    add_callback_mappings,
-    add_pullers,
+    build_and_callback_mappings,
+    build_and_callback_pullers
 )
 
 # ---------------------------------------------------------------------------
@@ -120,37 +120,6 @@ def flaps_on_callback(key: str, val: Any) -> None:
 
     state.midi_out.sendNoteOn(0, FLAPS_LED_ID, color)
 
-# ---------------------------------------------------------------------------
-# CALLBACK FACTORIES
-# ---------------------------------------------------------------------------
-
-def make_toggle_callback(property_path: str) -> Callable:
-    def _cb(val):
-        on_off_toggle_callback(property_path, val)
-    return _cb
-
-def make_puller_callback(led_id: int) -> Callable:
-    def _cb(key, val):
-        pull_on_off_callback(led_id, key, val)
-    return _cb
-
-# ---------------------------------------------------------------------------
-# CONFIG BUILDERS
-# ---------------------------------------------------------------------------
-
-def build_callback_mappings(toggle_mappings):
-    result = []
-    for midiMsgType, led_id, property_path in toggle_mappings:
-        cb = make_toggle_callback(property_path)
-        result.append((midiMsgType, led_id, cb))
-    return result
-
-def build_pullers(puller_mappings):
-    result = []
-    for property_path, led_id in puller_mappings:
-        cb = make_puller_callback(led_id)
-        result.append((property_path, cb))
-    return result
 
 # ---------------------------------------------------------------------------
 # CONFIG LOADING
@@ -185,26 +154,35 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
     # Toggle mappings (MIDI → FG)
     toggle_mappings = [
         (FlightgearMidi.MidiMsgType.NOTE_ON, CARB_HEAT_LED_ID,
-         "/controls/engines/current-engine/carb-heat")
+         "/controls/engines/current-engine/carb-heat"),
+        (FlightgearMidi.MidiMsgType.NOTE_ON, LANDING_LIGHTS_LED_ID,
+         "/controls/lighting/landing-lights"),
+        (FlightgearMidi.MidiMsgType.NOTE_ON, TAXI_LIGHT_LED_ID,
+         "/controls/lighting/taxi-light ")                  
     ]
 
-    callback_mappings = build_callback_mappings(toggle_mappings)
-    add_callback_mappings(midi_input, callback_mappings)
+    build_and_callback_mappings(midi_input, toggle_mappings, on_off_toggle_callback)
+    
 
     cfg.dataConfigMidiInputs.append(midi_input)
 
     # Puller mappings (FG → LED)
     puller_mappings = [
-        ("/controls/flight/flaps", FLAPS_LED_ID),
-        ("/instrumentation/airspeed-indicator/indicated-speed-kt", AIR_SPEED_LED_ID),
+        ("/controls/flight/flaps", FLAPS_LED_ID, flaps_on_callback),
+        ("/instrumentation/airspeed-indicator/indicated-speed-kt",
+            AIR_SPEED_LED_ID, pull_indicated_air_speed_callback),
     ]
 
-    # Auto‑append pullers for every toggle mapping
     for _, led_id, property_path in toggle_mappings:
-        puller_mappings.append((property_path, led_id))
+        puller_mappings.append((property_path, led_id, pull_on_off_callback))
 
-    pullers = build_pullers(puller_mappings)
-    add_pullers(cfg.dataConfigPullerFgKeys, pullers)
+
+    build_and_callback_pullers(
+    cfg.dataConfigPullerFgKeys,
+    puller_mappings,
+    toggle_mappings,
+    pull_on_off_callback,   # passed explicitly
+)   
 
     return cfg
 
