@@ -2,6 +2,9 @@ from FlightgearMidiHelper import (
     FlightgearMidi
 )
 
+from typing import Any, Iterable, Tuple
+from typing import Any, Optional, Callable, List, Tuple
+
 # ---------------------------------------------------------------------------
 # CONFIG HELPERS
 # ---------------------------------------------------------------------------
