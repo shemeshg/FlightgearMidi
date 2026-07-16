@@ -25,7 +25,6 @@ class AppState:
     previous_air_speed_color: Optional[int] = None
     carb_heat_on: bool = False
 
-
 state = AppState()
 
 # ---------------------------------------------------------------------------
@@ -56,7 +55,6 @@ COLOR = {
     "amber_blink": 59,
     "high": 127,
     "low": 0
-
 }
 
 FLAPS_LED_ID = 13 + 16 * 0
@@ -96,24 +94,13 @@ def pull_on_off_callback(btn_id: int, key: str, val: str) -> None:
         return
 
     carb_on = (v == "true")
-    state.midi_out.sendNoteOn(0, btn_id, COLOR["high"]  if carb_on else COLOR["low"] )
+    state.midi_out.sendNoteOn(0, btn_id, COLOR["high"] if carb_on else COLOR["low"])
 
 
-
-
-def on_off_toggle_callback(key:str , val: Any) -> None:
+def on_off_toggle_callback(key: str, val: Any) -> None:
     state.carb_heat_on = not state.carb_heat_on
     cmd = "true" if state.carb_heat_on else "false"
-    state.midi.sendTerminalRaw(
-        f"set {key} {cmd}"
-    )
-
-def carb_heat_toggle_callback(val: Any) -> None:
-    state.carb_heat_on = not state.carb_heat_on
-    cmd = "true" if state.carb_heat_on else "false"
-    state.midi.sendTerminalRaw(
-        f"set /controls/engines/current-engine/carb-heat {cmd}"
-    )
+    state.midi.sendTerminalRaw(f"set {key} {cmd}")
 
 
 def flaps_on_callback(key: str, val: Any) -> None:
@@ -132,6 +119,38 @@ def flaps_on_callback(key: str, val: Any) -> None:
         color = COLOR["off"]
 
     state.midi_out.sendNoteOn(0, FLAPS_LED_ID, color)
+
+# ---------------------------------------------------------------------------
+# CALLBACK FACTORIES
+# ---------------------------------------------------------------------------
+
+def make_toggle_callback(property_path: str) -> Callable:
+    def _cb(val):
+        on_off_toggle_callback(property_path, val)
+    return _cb
+
+def make_puller_callback(led_id: int) -> Callable:
+    def _cb(key, val):
+        pull_on_off_callback(led_id, key, val)
+    return _cb
+
+# ---------------------------------------------------------------------------
+# CONFIG BUILDERS
+# ---------------------------------------------------------------------------
+
+def build_callback_mappings(toggle_mappings):
+    result = []
+    for midiMsgType, led_id, property_path in toggle_mappings:
+        cb = make_toggle_callback(property_path)
+        result.append((midiMsgType, led_id, cb))
+    return result
+
+def build_pullers(puller_mappings):
+    result = []
+    for property_path, led_id in puller_mappings:
+        cb = make_puller_callback(led_id)
+        result.append((property_path, cb))
+    return result
 
 # ---------------------------------------------------------------------------
 # CONFIG LOADING
@@ -163,34 +182,28 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
 
     add_mappings(midi_input, mappings)
 
-    # Carb heat toggle (NOTE ON → callback)
-    def make_toggle_callback(property_path):
-        def _cb(val):
-            on_off_toggle_callback(property_path, val)
-        return _cb
-    
-    callback_mappings = [
-        (
-            FlightgearMidi.MidiMsgType.NOTE_ON, 
-            CARB_HEAT_LED_ID, 
-            make_toggle_callback("/controls/engines/current-engine/carb-heat")
-         )        
+    # Toggle mappings (MIDI → FG)
+    toggle_mappings = [
+        (FlightgearMidi.MidiMsgType.NOTE_ON, CARB_HEAT_LED_ID,
+         "/controls/engines/current-engine/carb-heat")
     ]
-    add_callback_mappings(midi_input, callback_mappings)
 
+    callback_mappings = build_callback_mappings(toggle_mappings)
+    add_callback_mappings(midi_input, callback_mappings)
 
     cfg.dataConfigMidiInputs.append(midi_input)
 
-    # Pullers (FG → callbacks)
-    pullers: List[Tuple[str, Callable]] = [
-        ("/controls/flight/flaps", flaps_on_callback),
-        ("/instrumentation/airspeed-indicator/indicated-speed-kt",
-         pull_indicated_air_speed_callback),
-        ("/controls/engines/current-engine/carb-heat",
-         lambda key,val: pull_on_off_callback(CARB_HEAT_LED_ID, key,val)
-        ),
+    # Puller mappings (FG → LED)
+    puller_mappings = [
+        ("/controls/flight/flaps", FLAPS_LED_ID),
+        ("/instrumentation/airspeed-indicator/indicated-speed-kt", AIR_SPEED_LED_ID),
     ]
 
+    # Auto‑append pullers for every toggle mapping
+    for _, led_id, property_path in toggle_mappings:
+        puller_mappings.append((property_path, led_id))
+
+    pullers = build_pullers(puller_mappings)
     add_pullers(cfg.dataConfigPullerFgKeys, pullers)
 
     return cfg
