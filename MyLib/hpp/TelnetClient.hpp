@@ -285,7 +285,7 @@ private:
                         accumulated_line.clear();
 
                         data_cv.notify_one();
-                    }
+                    }                    
                 }
             }
         }

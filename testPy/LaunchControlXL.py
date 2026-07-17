@@ -69,7 +69,7 @@ TAXI_LIGHT_LED_ID = 107
 # CALLBACKS
 # ---------------------------------------------------------------------------
 
-def pull_indicated_air_speed_callback(key: str, val: Any) -> None:
+def pull_indicated_air_speed_callback(key: str, val: Any) -> None:    
     try:
         speed = float(val)
     except Exception:
@@ -90,6 +90,8 @@ def pull_indicated_air_speed_callback(key: str, val: Any) -> None:
 
 
 def pull_on_off_callback(btn_id: int, key: str, val: str) -> None:
+    print("***", flush=True)
+    sys.stdout.flush()
     v = val.strip().lower()
     if v not in ("true", "false"):
         return

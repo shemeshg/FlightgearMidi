@@ -3,7 +3,7 @@ from FlightgearMidiHelper import (
 )
 
 from typing import Any, Iterable, Tuple, Callable, List
-
+import sys
 # ---------------------------------------------------------------------------
 # CONFIG HELPERS
 # ---------------------------------------------------------------------------
@@ -108,6 +108,9 @@ def build_pullers(
 
     return result
 
+def pull_nasal_script_callback(key: str, val: str) -> None:
+    print(f"we have scripy key {val} with params {key}\n")
+    sys.stdout.flush()
 
 def build_and_callback_pullers(
     dataConfigPullerFgKeys: list,
@@ -115,8 +118,24 @@ def build_and_callback_pullers(
     toggle_mappings: Iterable[Tuple[Any, int, str]],
     pull_on_off_callback: Callable[[int, str, Any], None],
 ) -> None:
+
+    # Add toggle pullers
     for _, led_id, property_path in toggle_mappings:
         puller_mappings.append((property_path, led_id, pull_on_off_callback))
 
+    # Build normal pullers
     pullers = build_pullers(puller_mappings, pull_on_off_callback)
     add_pullers(dataConfigPullerFgKeys, pullers)
+
+    # Add nasal puller (corrected)
+    nsl_puller = FlightgearMidi.DataConfigPullerFgKey()
+
+    def cb(key, val):
+        pull_nasal_script_callback(key, val)
+
+    nsl_puller.fgKetPath = "/sim/signals/telnet-out"
+    nsl_puller.callback = cb
+
+    dataConfigPullerFgKeys.append(nsl_puller)
+
+

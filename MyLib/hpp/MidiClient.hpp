@@ -45,7 +45,7 @@ public:
             while (true) {                
                 if(telnetClient.isRunning()){
                     if (!telnetClient.getIsTerminalDebugMode()){
-                        for(const auto &puller: dataConfig.dataConfigPullerFgKeys){                            
+                        for(const auto &puller: dataConfig.dataConfigPullerFgKeys){                                                      
                             std::string pullVal = telnetClient.getValue(puller.fgKetPath);
                             if (isPullerUnoderedMapValueChanged(puller.fgKetPath, pullVal)){
                                 puller.callback(puller.fgKetPath, pullVal);
