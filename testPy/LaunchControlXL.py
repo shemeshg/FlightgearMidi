@@ -130,6 +130,36 @@ def flaps_on_callback(key: str, val: Any) -> None:
 # CONFIG LOADING
 # ---------------------------------------------------------------------------
 
+def build_nasal_script(puller_mappings, toggle_mappings, requires_init):
+    
+    init_script = "".join(f"set {p[0]} {p[1]}\n" for p in requires_init)
+
+
+    # Extract property paths
+    puller_props = [m[0] for m in puller_mappings]
+    toggle_props = [m[2] for m in toggle_mappings]
+
+    # Combine into one list
+    all_props = puller_props + toggle_props
+
+    # Build the inside of tprint(...)
+    # Example: "path" ~ getprop("path") ~ "|" ~ "path2" ~ getprop("path2")
+    parts = []
+    for p in all_props:
+        parts.append(f'"{p}: " ~ getprop("{p}")')
+
+    nasal_concat = " ~ \"|\" ~ ".join(parts)
+
+    # Final script
+    script = init_script +  f"""nasal
+var tprint = func(msg) {{ setprop("/sim/signals/telnet-out", msg); }}
+tprint({nasal_concat});
+##EOF##"""
+
+    return script
+
+
+
 def loadConfigData() -> FlightgearMidi.DataConfig:
     cfg = FlightgearMidi.DataConfig()
     cfg.telnetHost = TELNET_HOST
@@ -153,6 +183,10 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
     ]
 
     add_mappings(midi_input, mappings)
+
+    requires_init = [
+        ("/controls/engines/current-engine/carb-heat","false")
+    ]
 
     toggle_mappings = [
         (FlightgearMidi.MidiMsgType.NOTE_ON, CARB_HEAT_LED_ID,
@@ -179,6 +213,8 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
         toggle_mappings,
         pull_on_off_callback,
     )
+
+    print(build_nasal_script(puller_mappings, toggle_mappings, requires_init))
 
     return cfg
 
