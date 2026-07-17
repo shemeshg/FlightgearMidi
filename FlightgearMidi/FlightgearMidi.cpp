@@ -39,6 +39,7 @@ PYBIND11_MODULE(FlightgearMidi, m)
         .def("openSocket", &TelnetClient::openSocket)
         .def("getCmd", &TelnetClient::getCmd)
         .def("stop", &TelnetClient::stop)
+        .def_readwrite("telnetInitCmds", &TelnetClient::telnetInitCmds)
     ;
     py::class_<LibreMidiOutPort>(m, "LibreMidiOutPort")
         .def("sendNoteOn", &LibreMidiOutPort::sendNoteOn)
@@ -106,6 +107,7 @@ PYBIND11_MODULE(FlightgearMidi, m)
         .def_readwrite("telnetPort", &DataConfig::telnetPort)
         .def_readwrite("dataConfigMidiInputs", &DataConfig::dataConfigMidiInputs)
         .def_readwrite("dataConfigPullerFgKeys", &DataConfig::dataConfigPullerFgKeys)
+        .def_readwrite("telnetInitCmds", &DataConfig::telnetInitCmds)
     ;
 }
 // [[[end]]]

@@ -69,6 +69,37 @@ TAXI_LIGHT_LED_ID = 107
 # CALLBACKS
 # ---------------------------------------------------------------------------
 
+def build_nasal_script(puller_mappings, toggle_mappings, requires_init):
+    init_script = "data\n"
+    init_script = init_script + "".join(f"set {p[0]} {p[1]}\n" for p in requires_init)
+
+
+    # Extract property paths
+    puller_props = [m[0] for m in puller_mappings]
+    toggle_props = [m[2] for m in toggle_mappings]
+
+    # Combine into one list
+    all_props = puller_props + toggle_props
+
+    # Build the inside of tprint(...)
+    # Example: "path" ~ getprop("path") ~ "|" ~ "path2" ~ getprop("path2")
+    parts = []
+    for p in all_props:
+        parts.append(f'"{p}: " ~ getprop("{p}")')
+
+    nasal_concat = " ~ \"|\" ~ ".join(parts)
+
+    # Final script
+    script = init_script +  f"""nasal
+var tprint = func(msg) {{ setprop("/sim/signals/telnet-out", msg); }}
+tprint({nasal_concat});
+##EOF##"""
+
+    return script.splitlines()
+
+
+
+
 def pull_indicated_air_speed_callback(key: str, val: Any) -> None:
     print("****\n")
     try:
@@ -180,6 +211,10 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
         toggle_mappings,
         pull_on_off_callback,
     )
+    requires_init = [
+        ("/controls/engines/current-engine/carb-heat","false")
+    ]
+    cfg.telnetInitCmds = build_nasal_script(puller_mappings, toggle_mappings, requires_init)
 
     return cfg
 
