@@ -70,6 +70,7 @@ TAXI_LIGHT_LED_ID = 107
 # ---------------------------------------------------------------------------
 
 def pull_indicated_air_speed_callback(key: str, val: Any) -> None:
+    print("****\n")
     try:
         speed = float(val)
     except Exception:
