@@ -82,4 +82,5 @@ public:
     std::string telnetPort;
     std::vector<DataConfigMidiInput> dataConfigMidiInputs;
     std::vector<DataConfigPullerFgKey> dataConfigPullerFgKeys;
+    std::vector<std::string> telnetInitCmds {"data"};
 };

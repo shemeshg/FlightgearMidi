@@ -42,6 +42,8 @@ class TelnetClient
 public:
     sigslot::signal<bool> sigIsRunningChanged;
 
+    std::vector<std::string> telnetInitCmds {};
+
     //- {fn}
     bool isRunning() const
     //-only-file body
@@ -305,7 +307,10 @@ private:
 
         std::cerr << "[INIT] Sending 'data\\r\\n' mode command to FlightGear...\n";
         
-        sendTerminalRaw("data");
+        for (auto const &s: telnetInitCmds){
+            sendTerminalRaw(s);
+        }
+        
 
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
         

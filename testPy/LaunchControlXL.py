@@ -131,8 +131,8 @@ def flaps_on_callback(key: str, val: Any) -> None:
 # ---------------------------------------------------------------------------
 
 def build_nasal_script(puller_mappings, toggle_mappings, requires_init):
-    
-    init_script = "".join(f"set {p[0]} {p[1]}\n" for p in requires_init)
+    init_script = "data\n"
+    init_script = init_script + "".join(f"set {p[0]} {p[1]}\n" for p in requires_init)
 
 
     # Extract property paths
@@ -156,7 +156,7 @@ var tprint = func(msg) {{ setprop("/sim/signals/telnet-out", msg); }}
 tprint({nasal_concat});
 ##EOF##"""
 
-    return script
+    return script.splitlines()
 
 
 
@@ -214,7 +214,7 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
         pull_on_off_callback,
     )
 
-    print(build_nasal_script(puller_mappings, toggle_mappings, requires_init))
+    cfg.telnetInitCmds = build_nasal_script(puller_mappings, toggle_mappings, requires_init)
 
     return cfg
 

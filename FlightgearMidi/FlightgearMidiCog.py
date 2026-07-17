@@ -102,7 +102,8 @@ m.add_enum("MidiMsgType", ["CONTROL_CHANGE", "NOTE_ON", "NOTE_OFF"])
 m.add_class(PyClass(
     name="TelnetClient",
     has_constructor=True,
-    defs=["openSocket", "getCmd", "stop"]
+    defs=["openSocket", "getCmd", "stop"],
+    defs_rw = ["telnetInitCmds"]
 ))
 
 m.add_class(PyClass(
@@ -150,7 +151,8 @@ m.add_class(PyClass(
 m.add_class(PyClass(
     name="DataConfig",
     has_constructor=True,
-    defs_rw=["telnetHost", "telnetPort", "dataConfigMidiInputs", "dataConfigPullerFgKeys"]
+    defs_rw=["telnetHost", "telnetPort", 
+             "dataConfigMidiInputs", "dataConfigPullerFgKeys","telnetInitCmds"]    
 ))
 
 

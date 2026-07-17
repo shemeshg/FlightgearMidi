@@ -230,6 +230,7 @@ public:
 
         telnetDisconnected = false;
         telnetClient.stop();
+        telnetClient.telnetInitCmds = dataConfig.telnetInitCmds;
         if (!telnetClient.openSocket(dataConfig.telnetHost, dataConfig.telnetPort))
         {
             std::cout << "Telnet server - could not connect!" << std::endl;
