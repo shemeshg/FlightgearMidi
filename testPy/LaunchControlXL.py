@@ -101,7 +101,6 @@ tprint({nasal_concat});
 
 
 def pull_indicated_air_speed_callback(key: str, val: Any) -> None:
-    print("****\n")
     try:
         speed = float(val)
     except Exception:
