@@ -10,3 +10,11 @@ requires-python = ">=3.9" # This is where Python 3.9 actually belongs!
 [tool.scikit-build]
 cmake.build-type = "Release"
 wheel.packages = ["FlightgearMidi"]  # Bundles python folder 
+
+cmake.args = [
+    "-DCPR_FORCE_USE_SYSTEM_CURL=OFF",
+    "-DCPR_ENABLE_SSL=ON",
+    "-DCMAKE_USE_OPENSSL=ON",
+    "-DCURL_DISABLE_LIBPSL=ON",
+    "-DCURL_USE_LIBPSL=OFF"
+]
