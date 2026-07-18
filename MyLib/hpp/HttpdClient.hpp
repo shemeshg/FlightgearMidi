@@ -4,6 +4,7 @@
 //-only-file header //-
 #pragma once
 #include <string>
+#include <unordered_map>
 
 //-only-file body //-
 //- #include "HttpdClient.h"
@@ -27,34 +28,33 @@ public:
     }
 
     //- {fn}
-    void testQuery(std::string requestUrl)
+    void testQuery(std::unordered_map<std::string, std::string> &requestUrls)
     //-only-file body
     {
         std::vector<cpr::AsyncWrapper<cpr::Response>> futures;
-        futures.reserve(4);
+        futures.reserve(requestUrls.size());
 
-        for (int i = 0; i < 4; ++i)
+        // Launch async requests
+        for (const auto &pair : requestUrls)
         {
             futures.emplace_back(
                 cpr::GetAsync(
-                    cpr::Url{requestUrl},
+                    cpr::Url{getUrl(pair.first)},
                     cpr::Header{{"Content-Type", "application/json"}}));
-
         }
 
-        // Wait for all responses
-        for (auto &f : futures)
+        // Collect results
+        auto f_it = futures.begin();
+        for (auto &pair : requestUrls)
         {
-            cpr::Response r = f.get();
+            cpr::Response r = f_it->get();
+            ++f_it;
 
-            if (r.error)
+            if (!r.error)
             {
-                std::cerr << "Request failed: " << r.error.message << "\n";
-                continue;
+                auto json = nlohmann::json::parse(r.text);
+                pair.second = json["value"].dump(); // always string
             }
-      
-            auto json = nlohmann::json::parse(r.text);
-            std::cout << "Response JSON: " << json["value"].dump() << "\n";
         }
     }
 
