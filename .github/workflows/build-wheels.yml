@@ -108,12 +108,12 @@ jobs:
             CURL_DISABLE_IDN
             MACOSX_DEPLOYMENT_TARGET
 
-          # Linux fix: disable IDN inside manylinux + install OpenSSL
+          # Linux fix: correct syntax + OpenSSL
           CIBW_BEFORE_BUILD_LINUX: >
             export CURL_DISABLE_IDN=ON
             yum install -y openssl-devel
 
-          # Windows fix: install OpenSSL only (WinRT disabled in pyproject)
+          # Windows fix: OpenSSL only (WinRT disabled in pyproject)
           CIBW_BEFORE_BUILD_WINDOWS: >
             choco install openssl.light -y
 
