@@ -108,13 +108,17 @@ jobs:
             CURL_DISABLE_IDN
             MACOSX_DEPLOYMENT_TARGET
 
-          # Linux fix: install OpenSSL inside manylinux container
+          # Linux fix: apply env inside manylinux container
+          CIBW_ENVIRONMENT_LINUX: >
+            CURL_DISABLE_IDN=ON
+
+          # Linux fix: install OpenSSL inside manylinux
           CIBW_BEFORE_BUILD_LINUX: >
             yum install -y openssl-devel
 
-          # Windows fix: install OpenSSL
+          # Windows fix: install WinRT headers + OpenSSL
           CIBW_BEFORE_BUILD_WINDOWS: >
-            choco install openssl.light
+            winget install Microsoft.CppWinRT --silent && choco install openssl.light
 
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
           CIBW_ARCHS_LINUX: ${{ matrix.cibw_archs }}
