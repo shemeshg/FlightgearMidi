@@ -91,16 +91,21 @@ jobs:
           CIBW_BUILD_FRONTEND: build
           CIBW_TEST_COMMAND: ''
 
-          # Pass CPR/CMake flags into the build env
+          # CPR/Curl flags
           CIBW_ENVIRONMENT: >
             CMAKE_BUILD_PARALLEL_LEVEL=4
             CPR_FORCE_USE_SYSTEM_CURL=OFF
             CPR_ENABLE_SSL=ON
             CMAKE_USE_OPENSSL=ON
+            CURL_DISABLE_LIBPSL=ON
+            CURL_USE_LIBPSL=OFF
+
           CIBW_ENVIRONMENT_PASS: >
             CPR_FORCE_USE_SYSTEM_CURL
             CPR_ENABLE_SSL
             CMAKE_USE_OPENSSL
+            CURL_DISABLE_LIBPSL
+            CURL_USE_LIBPSL
 
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
           CIBW_ARCHS_LINUX: ${{ matrix.cibw_archs }}
