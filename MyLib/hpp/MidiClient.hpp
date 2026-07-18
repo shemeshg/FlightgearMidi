@@ -40,24 +40,26 @@ public:
             this->telnetDisconnected = true;
             } });
 
-        std::thread worker([this]()
-                           {
-            while (true) {                
-                if(telnetClient.isRunning()){
-                    if (!telnetClient.getIsTerminalDebugMode()){
+        sigPullerTick.connect([this]()
+                              {
                         for(const auto &puller: dataConfig.dataConfigPullerFgKeys){                            
                             std::string pullVal = telnetClient.getValue(puller.fgKetPath);
                             if (isPullerUnoderedMapValueChanged(puller.fgKetPath, pullVal)){
                                 puller.callback(puller.fgKetPath, pullVal);
                             }
-                            if (pullerSleepInterval != 0){
-                                std::this_thread::sleep_for(std::chrono::milliseconds(pullerSleepInterval));
-                            }                            
-                        }                        
-                    }
-                    
+                        
+                        } });
 
-                    
+        std::thread worker([this]()
+                           {
+            while (true) {                
+                if(telnetClient.isRunning()){
+                    if (!telnetClient.getIsTerminalDebugMode()){
+                        sigPullerTick();    
+                        if (pullerSleepInterval != 0){
+                                std::this_thread::sleep_for(std::chrono::milliseconds(pullerSleepInterval));
+                        }                                             
+                    }
                 }
 
             } });
@@ -307,6 +309,7 @@ private:
     DataConfig dataConfig{};
 
     std::unordered_map<std::string, std::string> pullerCashMap;
+    sigslot::signal<> sigPullerTick;
 
     //- {fn}
     bool isPullerUnoderedMapValueChanged(std::string key, std::string newVal)

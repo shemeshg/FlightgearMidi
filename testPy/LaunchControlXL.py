@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Any, Optional
 import sys
+import os
+
 
 from FlightgearMidiHelper import (
     main_loop,

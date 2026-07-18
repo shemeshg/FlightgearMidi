@@ -40,7 +40,7 @@ class TelnetClient
 {
 
 public:
-    sigslot::signal<bool> sigIsRunningChanged;
+    sigslot::signal<bool> sigIsRunningChanged;    
     std::vector<std::string> telnetInitCmds {};
 
     //- {fn}

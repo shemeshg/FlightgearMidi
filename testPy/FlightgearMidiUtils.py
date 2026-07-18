@@ -109,6 +109,9 @@ def build_pullers(
     return result
 
 
+def pull_nasal_script_callback(key: str, val: str) -> None:
+    print(f"we have scripy key {val} with params {key}\n")
+
 def build_and_callback_pullers(
     dataConfigPullerFgKeys: list,
     puller_mappings: List[Tuple[str, int, Callable]],
@@ -120,3 +123,15 @@ def build_and_callback_pullers(
 
     pullers = build_pullers(puller_mappings, pull_on_off_callback)
     add_pullers(dataConfigPullerFgKeys, pullers)
+
+
+    # Add nasal puller (corrected)
+    nsl_puller = FlightgearMidi.DataConfigPullerFgKey()
+
+    def cb(key, val):
+        pull_nasal_script_callback(key, val)
+
+    nsl_puller.fgKetPath = "/sim/signals/telnet-out"
+    nsl_puller.callback = cb
+
+    dataConfigPullerFgKeys.append(nsl_puller)

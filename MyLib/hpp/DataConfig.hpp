@@ -54,8 +54,7 @@ public:
     int notePitchOrCcChannel = 0;
     std::string setCmd;
     bool isCallback = false;
-    std::function<void(std::vector<int>)> callback = [](std::vector<int> data){
-    };    
+    std::function<void(std::vector<int>)> callback = [](std::vector<int> data) {};
 };
 
 class DataConfigMidiInput
@@ -68,10 +67,10 @@ public:
 
 class DataConfigPullerFgKey
 {
-    public:
+public:
+
     std::string fgKetPath;
-    std::function<void(std::string,std::string)> callback = [](std::string key ,std::string val){
-    };
+    std::function<void(std::string, std::string)> callback = [](std::string key, std::string val) {};
 
 };
 
@@ -83,5 +82,5 @@ public:
     std::vector<DataConfigMidiInput> dataConfigMidiInputs;
     std::vector<DataConfigPullerFgKey> dataConfigPullerFgKeys;
 
-    std::vector<std::string> telnetInitCmds {"data"};
+    std::vector<std::string> telnetInitCmds{"data"};
 };
