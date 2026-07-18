@@ -40,25 +40,30 @@ public:
             this->telnetDisconnected = true;
             } });
 
-        sigPullerTick.connect([this]()
+        sigPullerTick.connect([this](const DataConfigPullerFgKey *puller, std::string pullVal)
                               {
-                        for(const auto &puller: dataConfig.dataConfigPullerFgKeys){                            
-                            std::string pullVal = telnetClient.getValue(puller.fgKetPath);
-                            if (isPullerUnoderedMapValueChanged(puller.fgKetPath, pullVal)){
-                                puller.callback(puller.fgKetPath, pullVal);
-                            }
-                        
-                        } });
+                                puller->callback(puller->fgKetPath, pullVal);
+                    });
 
         std::thread worker([this]()
                            {
             while (true) {                
                 if(telnetClient.isRunning()){
                     if (!telnetClient.getIsTerminalDebugMode()){
-                        sigPullerTick();    
-                        if (pullerSleepInterval != 0){
-                                std::this_thread::sleep_for(std::chrono::milliseconds(pullerSleepInterval));
-                        }                                             
+
+                        for(const auto &puller: dataConfig.dataConfigPullerFgKeys){                            
+                            std::string pullVal = telnetClient.getValue(puller.fgKetPath);
+                            if (isPullerUnoderedMapValueChanged(puller.fgKetPath, pullVal)){                                
+                                sigPullerTick(&puller, pullVal);    
+                                if (pullerSleepInterval != 0){
+                                        std::this_thread::sleep_for(std::chrono::milliseconds(pullerSleepInterval));
+                                }                                   
+                            }
+                        
+                        } 
+
+
+                                          
                     }
                 }
 
@@ -309,7 +314,7 @@ private:
     DataConfig dataConfig{};
 
     std::unordered_map<std::string, std::string> pullerCashMap;
-    sigslot::signal<> sigPullerTick;
+    sigslot::signal<const DataConfigPullerFgKey*, std::string> sigPullerTick;
 
     //- {fn}
     bool isPullerUnoderedMapValueChanged(std::string key, std::string newVal)
