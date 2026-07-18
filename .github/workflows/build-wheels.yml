@@ -65,7 +65,19 @@ jobs:
             libasound2-dev \
             libudev-dev \
             libjack-jackd2-dev \
-            libpipewire-0.3-dev
+            libpipewire-0.3-dev \
+            libssl-dev \
+            libcurl4-openssl-dev
+
+      - name: Configure Windows toolchain for Meson
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          echo "CMAKE_GENERATOR=Visual Studio 17 2022" >> "$GITHUB_ENV"
+          echo "CMAKE_GENERATOR_PLATFORM=Win32" >> "$GITHUB_ENV"
+          echo "MSVC_VERSION=14.0" >> "$GITHUB_ENV"
+          where cl || true
+          where link || true
 
       - name: Build wheels with cibuildwheel
         shell: bash
@@ -77,6 +89,27 @@ jobs:
           CIBW_BUILD_FRONTEND: build
           CIBW_TEST_COMMAND: ''
           CIBW_ENVIRONMENT: CMAKE_BUILD_PARALLEL_LEVEL=4
+          CIBW_BEFORE_ALL_LINUX: |
+            set -e
+            if command -v yum >/dev/null 2>&1; then
+              yum install -y openssl-devel
+            elif command -v dnf >/dev/null 2>&1; then
+              dnf install -y openssl-devel
+            elif command -v microdnf >/dev/null 2>&1; then
+              microdnf install -y openssl-devel
+            elif command -v apt-get >/dev/null 2>&1; then
+              apt-get update
+              apt-get install -y --no-install-recommends libssl-dev libcurl4-openssl-dev
+            else
+              echo "No supported package manager found for manylinux container" >&2
+              exit 1
+            fi
+            if [ -d /usr/include/openssl ]; then
+              echo "OpenSSL headers present at /usr/include/openssl"
+            else
+              echo "OpenSSL headers were not installed successfully" >&2
+              exit 1
+            fi
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
           CIBW_ARCHS_LINUX: ${{ matrix.cibw_archs }}
           CIBW_ARCHS_MACOS: ${{ matrix.cibw_archs }}
