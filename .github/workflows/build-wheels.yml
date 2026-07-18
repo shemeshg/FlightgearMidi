@@ -97,13 +97,17 @@ jobs:
           CIBW_BUILD_FRONTEND: build
           CIBW_TEST_COMMAND: ''
 
+          # CRITICAL: Disable IDN BEFORE CMake config starts
+          # And set macOS deployment target to match Homebrew libs
           CIBW_ENVIRONMENT: >
             CMAKE_BUILD_PARALLEL_LEVEL=4
             CURL_DISABLE_IDN=ON
+            MACOSX_DEPLOYMENT_TARGET=14.0
 
           CIBW_ENVIRONMENT_PASS: >
             CMAKE_BUILD_PARALLEL_LEVEL
             CURL_DISABLE_IDN
+            MACOSX_DEPLOYMENT_TARGET
 
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
           CIBW_ARCHS_LINUX: ${{ matrix.cibw_archs }}
