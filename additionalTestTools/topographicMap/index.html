@@ -16,6 +16,9 @@
             width: 100%;
             height: 100%;
         }
+        .white-plane {
+            filter: brightness(0) invert(1);
+        }        
     </style>
 </head>
 <body>
@@ -29,64 +32,123 @@
 <script src="https://cdn.jsdelivr.net/npm/leaflet-rotatedmarker@0.2.0/leaflet.rotatedMarker.min.js"></script>
 
 <script>
-    // Initial center (Geneva Airport)
-    const initialPos = [46.2381, 6.1089];
-
-    // Create map
-    const map = L.map('map').setView(initialPos, 15);
-
-    // ESRI Satellite layer
-    L.tileLayer(
-        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        {
-            attribution: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics',
-            maxZoom: 19
-        }
-    ).addTo(map);
-
-    // Plane icon
-    const planeIcon = L.icon({
-        iconUrl: 'plane.png',
-        iconSize: [50, 50],
-        iconAnchor: [25, 25]
-    });
-
-    // Rotatable plane marker
-    const planeMarker = L.marker(initialPos, {
-        icon: planeIcon,
-        rotationAngle: 0,
-        rotationOrigin: 'center center'
-    }).addTo(map);
-
-    // Fetch FG position + heading
-    async function updatePlane() {
+    // ============================
+    //  GET INITIAL AIRCRAFT POSITION
+    // ============================
+    async function getInitialPos() {
         try {
             const latRes = await fetch('http://localhost:8800/json/position/latitude-deg');
             const lonRes = await fetch('http://localhost:8800/json/position/longitude-deg');
-            const hdgRes = await fetch('http://localhost:8800/json/orientation/heading-deg');
 
             const latJson = await latRes.json();
             const lonJson = await lonRes.json();
-            const hdgJson = await hdgRes.json();
 
-            const lat = latJson.value;
-            const lon = lonJson.value;
-            const hdg = hdgJson.value;
-
-            // Update marker position
-            planeMarker.setLatLng([lat, lon]);
-
-            // Update rotation (heading)
-            planeMarker.setRotationAngle(hdg -90);
-
+            return [latJson.value, lonJson.value];
         } catch (err) {
-            console.log("FlightGear not available");
+            console.log("FlightGear not available, using fallback");
+            return [46.2381, 6.1089]; // fallback Geneva
         }
     }
 
-    // Update every second
-    setInterval(updatePlane, 1000);
+    // ============================
+    //  INIT MAP
+    // ============================
+    async function initMap() {
+        const initialPos = await getInitialPos();
+
+        const map = L.map('map').setView(initialPos, 15);
+
+        L.tileLayer(
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            {
+                attribution: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics',
+                maxZoom: 19
+            }
+        ).addTo(map);
+
+        // ============================
+        //  PLANE MARKER
+        // ============================
+        const planeIcon = L.icon({
+            iconUrl: 'plane.png',
+            iconSize: [50, 50],
+            iconAnchor: [25, 25],
+            className: 'white-plane'
+        });
+
+        const planeMarker = L.marker(initialPos, {
+            icon: planeIcon,
+            rotationAngle: 0,
+            rotationOrigin: 'center center'
+        }).addTo(map);
+
+        async function updatePlane() {
+            try {
+                const latRes = await fetch('http://localhost:8800/json/position/latitude-deg');
+                const lonRes = await fetch('http://localhost:8800/json/position/longitude-deg');
+                const hdgRes = await fetch('http://localhost:8800/json/orientation/heading-deg');
+
+                const lat = (await latRes.json()).value;
+                const lon = (await lonRes.json()).value;
+                const hdg = (await hdgRes.json()).value;
+
+                planeMarker.setLatLng([lat, lon]);
+                planeMarker.setRotationAngle(hdg - 90);
+            } catch (err) {
+                console.log("FlightGear not available");
+            }
+        }
+
+        setInterval(updatePlane, 1000);
+
+        // ============================
+        //  USER MARKERS
+        // ============================
+        const userMarkers = [];
+
+        // Right-click map → add marker
+        map.on('contextmenu', function (e) {
+            const marker = L.marker(e.latlng, { draggable: true }).addTo(map);
+
+            userMarkers.push(marker);
+
+            // Right-click marker → remove it
+            marker.on('contextmenu', function () {
+                map.removeLayer(marker);
+                const idx = userMarkers.indexOf(marker);
+                if (idx !== -1) userMarkers.splice(idx, 1);
+            });
+        });
+
+        // ============================
+        //  REMOVE ALL MARKERS BUTTON
+        // ============================
+        const removeBtn = L.control({ position: 'topright' });
+
+        removeBtn.onAdd = function () {
+            const btn = L.DomUtil.create('button', 'remove-markers-btn');
+            btn.innerHTML = "Remove All Markers";
+            btn.style.padding = "8px";
+            btn.style.background = "white";
+            btn.style.border = "2px solid black";
+            btn.style.cursor = "pointer";
+
+            btn.onclick = function () {
+                userMarkers.forEach(m => map.removeLayer(m));
+                userMarkers.length = 0;
+            };
+
+            return btn;
+        };
+
+        removeBtn.addTo(map);
+    }
+
+    // Start map
+    initMap();
 </script>
+
+
 
 </body>
 </html>
