@@ -7,6 +7,7 @@ if [ ! -d ".venv" ]; then
     source .venv/bin/activate
     pip install cogapp
     pip install Jinja2
+    pip install meson
 else
     source .venv/bin/activate
 fi

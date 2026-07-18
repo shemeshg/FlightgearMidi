@@ -1,6 +1,11 @@
-enable https
+1. enable https
 
+```
 --httpd=8800
+```
 
-run python3 server to show map
+2. run python3 server to show map
+
+```
 python3 -m http.server 8080
+```
