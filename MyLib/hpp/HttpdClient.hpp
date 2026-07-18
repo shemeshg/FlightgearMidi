@@ -9,6 +9,7 @@
 //- #include "HttpdClient.h"
 #include <cpr/cpr.h>
 #include <iostream>
+#include <nlohmann/json.hpp>
 
 //-only-file header
 //-var {PRE} "HttpdClient::"
@@ -51,9 +52,9 @@ public:
                 std::cerr << "Request failed: " << r.error.message << "\n";
                 continue;
             }
-            std::cout << r.text <<"\n";
-            //auto json = nlohmann::json::parse(r.text);
-            //std::cout << "Response JSON: " << json.dump(2) << "\n";
+      
+            auto json = nlohmann::json::parse(r.text);
+            std::cout << "Response JSON: " << json["value"].dump() << "\n";
         }
     }
 
