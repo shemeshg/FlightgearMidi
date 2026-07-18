@@ -113,7 +113,7 @@ jobs:
             export CURL_DISABLE_IDN=ON
             yum install -y openssl-devel
 
-          # Windows fix: force WinMM backend + install OpenSSL
+          # Windows fix: install OpenSSL only (WinRT disabled in pyproject)
           CIBW_BEFORE_BUILD_WINDOWS: >
             choco install openssl.light -y
 
