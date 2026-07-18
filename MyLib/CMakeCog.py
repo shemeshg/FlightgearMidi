@@ -20,8 +20,19 @@ template_dict = {
                 "GIT_REPOSITORY" : "https://github.com/palacaze/sigslot" ,
                 "GIT_TAG" : "master",
                 "target_link": "Pal::Sigslot"
-           }           
-           
+           },
+           {
+                "LIB":  "cpr",
+                "GIT_REPOSITORY" : "https://github.com/libcpr/cpr.git" ,
+                "GIT_TAG" : "master",
+                "target_link": "cpr::cpr"
+           },
+           {
+                "LIB":  "json",
+                "GIT_REPOSITORY" : "https://github.com/nlohmann/json" ,
+                "GIT_TAG" : "master",
+                "target_link": "nlohmann_json::nlohmann_json"
+           },                     
            
            ]
 

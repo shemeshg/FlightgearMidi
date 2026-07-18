@@ -79,6 +79,7 @@ class DataConfig
 public:
     std::string telnetHost;
     std::string telnetPort;
+    std::string httpdPort;
     std::vector<DataConfigMidiInput> dataConfigMidiInputs;
     std::vector<DataConfigPullerFgKey> dataConfigPullerFgKeys;
 

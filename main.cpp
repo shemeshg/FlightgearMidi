@@ -1,5 +1,6 @@
 #include "MidiClientUtil.h"
 #include "DataConfig.h"
+#include "HttpdClient.h"
 #include <iostream>
 
 DataConfig loadConfigData()
@@ -177,7 +178,28 @@ int testSendMidi()
     return 0;
 }
 
+int runHttpdTest()
+{
+    std::unordered_map<std::string, std::string> inventory = {
+        {"/controls/engines/engine[0]/throttle", ""},
+        {"/controls/engines/current-engine/carb-heat", ""},
+        {"/controls/lighting/landing-lights", ""},
+        {"/controls/lighting/taxi-light", ""},
+        {"/controls/flight/flaps", ""},
+        {"/instrumentation/airspeed-indicator/indicated-speed-kt", ""}};
+
+    HttpdClient hc;
+
+    hc.updateQueryMapVals(inventory);
+    for (const auto &pair : inventory)
+    {
+        std::cout << pair.first << ": " << pair.second << "\n";
+    }
+
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
-    runFlightGearClient();
+    runHttpdTest();
 }

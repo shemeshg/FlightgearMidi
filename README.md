@@ -31,7 +31,7 @@ This gives you **low‑latency control** of aircraft systems using any MIDI devi
 Add this to FlightGear’s *Additional Settings*:
 
 ```
---telnet=5500
+--telnet=5500 --httpd=8800
 ```
 
 ---
@@ -65,6 +65,9 @@ import FlightgearMidi
 - CMake ≥ 3.16  
 - C++17 compiler  
 - Python ≥ 3.10  
+- `pip install meason`
+
+
 
 #### Build
 
@@ -118,6 +121,7 @@ python3 testPy/test.py
 cfg = FlightgearMidi.DataConfig()
 cfg.telnetHost = "localhost"
 cfg.telnetPort = "5500"
+cfg.httpdPort = "8800"
 ```
 
 ### 2. Add a MIDI input

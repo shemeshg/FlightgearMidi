@@ -42,6 +42,7 @@ MIDI_OUTPUT_INDEX = 0
 
 TELNET_HOST = "localhost"
 TELNET_PORT = "5500"
+HTTPD_PORT = "8800"
 
 COLOR = {
     "off": 12,
@@ -98,6 +99,7 @@ def pull_indicated_air_speed_callback(key: str, val: Any) -> None:
 
 def pull_on_off_callback(btn_id: int, key: str, val: str) -> None:
     v = val.strip().lower()
+    v = v.replace('"', '') 
     if v not in ("true", "false"):
         return
 
@@ -141,6 +143,7 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
     cfg = FlightgearMidi.DataConfig()
     cfg.telnetHost = TELNET_HOST
     cfg.telnetPort = TELNET_PORT
+    cfg.httpdPort = HTTPD_PORT
 
     midi_input = FlightgearMidi.DataConfigMidiInput()
     midi_input.midiInputIdx = MIDI_INPUT_INDEX
@@ -196,7 +199,7 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
 
 if __name__ == "__main__":
     state.midi = FlightgearMidi.getMidiClientItf()
-    state.midi.pullerSleepInterval = 10
+    state.midi.pullerSleepInterval = 100
     state.midi.setDataConfig(loadConfigData())
 
     logger.info("Available MIDI input ports:\n%s",

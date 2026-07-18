@@ -14,6 +14,7 @@ if(GEN_HPP)
     set(HPP_GEN_FILES
         ${CMAKE_SOURCE_DIR}/scripts/hppTemplates.txt
         ${CMAKE_CURRENT_SOURCE_DIR}/hpp/DataConfig.hpp
+${CMAKE_CURRENT_SOURCE_DIR}/hpp/HttpdClient.hpp
 ${CMAKE_CURRENT_SOURCE_DIR}/hpp/LibreMidiInPort.hpp
 ${CMAKE_CURRENT_SOURCE_DIR}/hpp/LibreMidiOutPort.hpp
 ${CMAKE_CURRENT_SOURCE_DIR}/hpp/MidiClient.hpp
@@ -55,9 +56,23 @@ FetchContent_Declare(
     GIT_TAG        master
 )
 FetchContent_MakeAvailable(sigslot)
+FetchContent_Declare(
+    cpr
+    GIT_REPOSITORY https://github.com/libcpr/cpr.git
+    GIT_TAG        master
+)
+FetchContent_MakeAvailable(cpr)
+FetchContent_Declare(
+    json
+    GIT_REPOSITORY https://github.com/nlohmann/json
+    GIT_TAG        master
+)
+FetchContent_MakeAvailable(json)
 add_library(MyLib STATIC    
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/DataConfig.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/DataConfig.h
+    ${CMAKE_CURRENT_BINARY_DIR}/hpp/HttpdClient.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/hpp/HttpdClient.h
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/LibreMidiInPort.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/LibreMidiInPort.h
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/LibreMidiOutPort.cpp
@@ -71,6 +86,7 @@ add_library(MyLib STATIC
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/TelnetClient.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/TelnetClient.h
     ${CMAKE_CURRENT_SOURCE_DIR}/hpp/DataConfig.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hpp/HttpdClient.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/hpp/LibreMidiInPort.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/hpp/LibreMidiOutPort.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/hpp/MidiClient.hpp
@@ -82,6 +98,8 @@ set_target_properties(MyLib PROPERTIES LINKER_LANGUAGE CXX)
 
 target_link_libraries(MyLib PUBLIC libremidi)
 target_link_libraries(MyLib PUBLIC Pal::Sigslot)
+target_link_libraries(MyLib PUBLIC cpr::cpr)
+target_link_libraries(MyLib PUBLIC nlohmann_json::nlohmann_json)
 target_include_directories(MyLib PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/hpp)
 
 if(GEN_HPP)
