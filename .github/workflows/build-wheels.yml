@@ -91,12 +91,14 @@ jobs:
           CIBW_BUILD_FRONTEND: build
           CIBW_TEST_COMMAND: ''
 
-          # Only pass minimal env vars; CPR flags are now in pyproject.toml
+          # CRITICAL: Disable IDN BEFORE CMake config starts
           CIBW_ENVIRONMENT: >
             CMAKE_BUILD_PARALLEL_LEVEL=4
+            CURL_DISABLE_IDN=ON
 
           CIBW_ENVIRONMENT_PASS: >
             CMAKE_BUILD_PARALLEL_LEVEL
+            CURL_DISABLE_IDN
 
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
           CIBW_ARCHS_LINUX: ${{ matrix.cibw_archs }}
