@@ -1,5 +1,6 @@
 #include "MidiClientUtil.h"
 #include "DataConfig.h"
+#include "HttpdClient.h"
 #include <iostream>
 
 DataConfig loadConfigData()
@@ -177,7 +178,14 @@ int testSendMidi()
     return 0;
 }
 
+int runHttpdTest(){
+    HttpdClient hc;
+    std::cout<<hc.getUrl("/controls/engines/engine[0]/throttle")<<"\n";
+    hc.testQuery(hc.getUrl("/controls/engines/engine[0]/throttle"));
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
-    runFlightGearClient();
+    runHttpdTest();
 }
