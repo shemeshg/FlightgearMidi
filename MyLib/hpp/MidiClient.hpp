@@ -23,6 +23,8 @@
 #include "TelnetClient.hpp" //- #include "TelnetClient.h"
 //- {include-header}
 #include "DataConfig.hpp" //- #include "DataConfig.h"
+//- {include-header}
+#include "HttpdClient.hpp" //- #include "HttpdClient.h"
 
 //-only-file header
 //-var {PRE} "MidiClient::"
@@ -41,29 +43,24 @@ public:
             } });
 
         sigPullerTick.connect([this](const DataConfigPullerFgKey *puller, std::string pullVal)
-                              {
-                                puller->callback(puller->fgKetPath, pullVal);
-                    });
+                              { puller->callback(puller->fgKetPath, pullVal); });
 
         std::thread worker([this]()
                            {
             while (true) {                
                 if(telnetClient.isRunning()){
                     if (!telnetClient.getIsTerminalDebugMode()){
-
+                        httpdClient.updateQueryMapVals(httpdClientMap);
                         for(const auto &puller: dataConfig.dataConfigPullerFgKeys){                            
-                            std::string pullVal = telnetClient.getValue(puller.fgKetPath);
+                            std::string pullVal = httpdClientMap[puller.fgKetPath];
                             if (isPullerUnoderedMapValueChanged(puller.fgKetPath, pullVal)){                                
-                                sigPullerTick(&puller, pullVal);    
-                                if (pullerSleepInterval != 0){
-                                        std::this_thread::sleep_for(std::chrono::milliseconds(pullerSleepInterval));
-                                }                                   
+                                sigPullerTick(&puller, pullVal);                                   
                             }
                         
                         } 
-
-
-                                          
+                        if (pullerSleepInterval != 0){
+                                std::this_thread::sleep_for(std::chrono::milliseconds(pullerSleepInterval));
+                        }                                                                      
                     }
                 }
 
@@ -114,6 +111,11 @@ public:
     //-only-file body
     {
         dataConfig = cfg;
+
+        for (const auto &puller : dataConfig.dataConfigPullerFgKeys)
+        {
+            httpdClientMap[puller.fgKetPath] = "";
+        }
     }
 
     //- {fn}
@@ -314,7 +316,10 @@ private:
     DataConfig dataConfig{};
 
     std::unordered_map<std::string, std::string> pullerCashMap;
-    sigslot::signal<const DataConfigPullerFgKey*, std::string> sigPullerTick;
+    sigslot::signal<const DataConfigPullerFgKey *, std::string> sigPullerTick;
+
+    HttpdClient httpdClient;
+    std::unordered_map<std::string, std::string> httpdClientMap;
 
     //- {fn}
     bool isPullerUnoderedMapValueChanged(std::string key, std::string newVal)

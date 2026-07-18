@@ -190,7 +190,7 @@ int runHttpdTest()
 
     HttpdClient hc;
 
-    hc.testQuery(inventory);
+    hc.updateQueryMapVals(inventory);
     for (const auto &pair : inventory)
     {
         std::cout << pair.first << ": " << pair.second << "\n";

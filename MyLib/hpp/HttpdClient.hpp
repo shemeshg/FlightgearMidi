@@ -28,7 +28,7 @@ public:
     }
 
     //- {fn}
-    void testQuery(std::unordered_map<std::string, std::string> &requestUrls)
+    void updateQueryMapVals(std::unordered_map<std::string, std::string> &requestUrls)
     //-only-file body
     {
         std::vector<cpr::AsyncWrapper<cpr::Response>> futures;
