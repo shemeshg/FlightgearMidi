@@ -58,7 +58,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install build cibuildwheel cmake ninja
 
-      # Linux dependencies — NO CURL, NO PSL, NO MESON
       - name: Install Linux build dependencies
         if: runner.os == 'Linux'
         shell: bash
@@ -73,7 +72,6 @@ jobs:
             libpipewire-0.3-dev \
             libssl-dev
 
-      # Windows — Ninja only (CPR CI uses Ninja)
       - name: Configure Windows toolchain
         if: runner.os == 'Windows'
         shell: bash
@@ -87,19 +85,22 @@ jobs:
           CMAKE_BUILD_PARALLEL_LEVEL: 4
           PIP_DISABLE_PIP_VERSION_CHECK: 1
 
-          # Build only CPython 3.11–3.14
           CIBW_BUILD: cp311-* cp312-* cp313-* cp314-*
           CIBW_SKIP: '*-musllinux_* *-manylinux_i686 *-win32 *-pp* *-cp39-* *-cp310-*'
 
           CIBW_BUILD_FRONTEND: build
           CIBW_TEST_COMMAND: ''
 
-          # Force CPR to build curl internally
+          # Pass CPR/CMake flags into the build env
           CIBW_ENVIRONMENT: >
             CMAKE_BUILD_PARALLEL_LEVEL=4
             CPR_FORCE_USE_SYSTEM_CURL=OFF
             CPR_ENABLE_SSL=ON
             CMAKE_USE_OPENSSL=ON
+          CIBW_ENVIRONMENT_PASS: >
+            CPR_FORCE_USE_SYSTEM_CURL
+            CPR_ENABLE_SSL
+            CMAKE_USE_OPENSSL
 
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
           CIBW_ARCHS_LINUX: ${{ matrix.cibw_archs }}
