@@ -22,7 +22,9 @@ cmake.args = [
     "-DCPR_ENABLE_SSL=ON",
     "-DCMAKE_USE_OPENSSL=ON",
     "-DCURL_DISABLE_LIBPSL=ON",
-    "-DCURL_USE_LIBPSL=OFF"
+    "-DCURL_USE_LIBPSL=OFF",
+    "-DCPR_ENABLE_LIBPSL=OFF"  
 ]
+
 
 # [[[end]]]
