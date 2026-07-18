@@ -116,9 +116,10 @@ jobs:
           CIBW_BEFORE_BUILD_LINUX: >
             yum install -y openssl-devel
 
-          # Windows fix: install WinRT headers + OpenSSL
+          # Windows fix: install WinRT + OpenSSL
           CIBW_BEFORE_BUILD_WINDOWS: >
-            winget install Microsoft.CppWinRT --silent && choco install openssl.light
+            choco install microsoft-windows-sdk -y
+            choco install openssl.light -y
 
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
           CIBW_ARCHS_LINUX: ${{ matrix.cibw_archs }}
