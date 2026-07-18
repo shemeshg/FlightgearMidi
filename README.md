@@ -31,7 +31,7 @@ This gives you **low‑latency control** of aircraft systems using any MIDI devi
 Add this to FlightGear’s *Additional Settings*:
 
 ```
---telnet=5500
+--telnet=5500 --httpd=8800
 ```
 
 ---
