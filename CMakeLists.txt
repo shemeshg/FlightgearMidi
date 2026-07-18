@@ -12,6 +12,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(BUILD_SHARED_LIBS OFF)
+set(CPR_USE_SYSTEM_CURL ON)
+
 add_subdirectory(MyLib)
 add_subdirectory(FlightgearMidi)
 add_executable(program-changer main.cpp)
