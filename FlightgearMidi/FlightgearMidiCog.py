@@ -151,7 +151,7 @@ m.add_class(PyClass(
 m.add_class(PyClass(
     name="DataConfig",
     has_constructor=True,
-    defs_rw=["telnetHost", "telnetPort", "dataConfigMidiInputs", "dataConfigPullerFgKeys","telnetInitCmds"]
+    defs_rw=["telnetHost", "telnetPort","httpdPort","dataConfigMidiInputs", "dataConfigPullerFgKeys","telnetInitCmds"]
 ))
 
 

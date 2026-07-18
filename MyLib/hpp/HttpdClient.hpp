@@ -17,6 +17,9 @@
 class HttpdClient
 {
 public:
+    std::string hostName = "localhost";
+    std::string hostPort = "8800";
+
     //- {function} 0 2
     const std::string getUrl(std::string key) const
     //-only-file body
@@ -60,8 +63,7 @@ public:
 
     //-only-file header
 private:
-    std::string hostName = "localhost";
-    std::string hostPort = "8800";
+
 
     //-only-file header
 };

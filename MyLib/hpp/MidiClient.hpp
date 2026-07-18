@@ -237,6 +237,8 @@ public:
     //-only-file body
     {
 
+        httpdClient.hostName = dataConfig.telnetHost;
+        httpdClient.hostPort = dataConfig.httpdPort;
         telnetDisconnected = false;
         telnetClient.stop();
         telnetClient.telnetInitCmds = dataConfig.telnetInitCmds;
