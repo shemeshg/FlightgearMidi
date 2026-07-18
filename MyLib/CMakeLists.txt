@@ -68,10 +68,6 @@ FetchContent_Declare(
     GIT_TAG        master
 )
 FetchContent_MakeAvailable(json)
-set(BUILD_SHARED_LIBS OFF)
-set(CPR_USE_SYSTEM_CURL OFF)
-
-
 
 add_library(MyLib STATIC    
     ${CMAKE_CURRENT_BINARY_DIR}/hpp/DataConfig.cpp
