@@ -97,8 +97,7 @@ jobs:
           CIBW_BUILD_FRONTEND: build
           CIBW_TEST_COMMAND: ''
 
-          # CRITICAL: Disable IDN BEFORE CMake config starts
-          # And set macOS deployment target to match Homebrew libs
+          # macOS fixes
           CIBW_ENVIRONMENT: >
             CMAKE_BUILD_PARALLEL_LEVEL=4
             CURL_DISABLE_IDN=ON
@@ -108,6 +107,14 @@ jobs:
             CMAKE_BUILD_PARALLEL_LEVEL
             CURL_DISABLE_IDN
             MACOSX_DEPLOYMENT_TARGET
+
+          # Linux fix: install OpenSSL inside manylinux container
+          CIBW_BEFORE_BUILD_LINUX: >
+            yum install -y openssl-devel
+
+          # Windows fix: install OpenSSL
+          CIBW_BEFORE_BUILD_WINDOWS: >
+            choco install openssl.light
 
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
           CIBW_ARCHS_LINUX: ${{ matrix.cibw_archs }}
