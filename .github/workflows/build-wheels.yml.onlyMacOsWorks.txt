@@ -82,7 +82,8 @@ jobs:
             cmake \
             debmake \
             devscripts \
-            debhelper
+            debhelper \
+            libpsl-dev
 
 
       - name: Configure Windows toolchain
