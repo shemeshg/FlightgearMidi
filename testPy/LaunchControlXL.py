@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Optional
 import sys
-import os
+
 
 from FlightgearMidiHelper import (
     main_loop,
@@ -57,7 +57,7 @@ class LaunchControlXL:
     # CALLBACKS
     # -------------------------------------------------------
 
-    def pull_indicated_air_speed(self, key: str, val: Any) -> None:
+    def pull_indicated_air_speed(self, key: str, val: str) -> None:
         try:
             speed = float(val)
         except Exception:
@@ -93,7 +93,7 @@ class LaunchControlXL:
         cmd = "true" if new else "false"
         self.midi.sendTerminalRaw(f"set {key} {cmd}")
 
-    def flaps_on(self, key: str, val: Any) -> None:
+    def flaps_on(self, key: str, val: str) -> None:
         try:
             flap = float(val)
         except Exception:
@@ -168,7 +168,8 @@ def loadConfigData(ctrl: LaunchControlXL) -> FlightgearMidi.DataConfig:
     apply_midi_bindings(
         cfg,
         midi_input,
-        ctrl,
+        ctrl.on_off_toggle,
+        ctrl.pull_on_off,
         mappings,
         toggle_mappings,
         puller_mappings
