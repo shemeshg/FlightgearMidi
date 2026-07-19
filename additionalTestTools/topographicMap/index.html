@@ -4,7 +4,6 @@
     <meta charset="utf-8">
     <title>FlightGear Live Map</title>
 
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
     <style>
@@ -18,137 +17,183 @@
         }
         .white-plane {
             filter: brightness(0) invert(1);
-        }        
+        }
+        .top-buttons {
+            position: absolute;
+            top: 10px;
+            right: 10px;   /* moved to right */
+            z-index: 1000;
+            display: flex;
+            flex-direction: column; /* vertical stack */
+            gap: 10px;
+        }
+        .map-btn {
+            padding: 8px 12px;
+            background: white;
+            border: 2px solid black;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .active-mode {
+            background: yellow;
+        }
     </style>
+
 </head>
 <body>
 
+<div class="top-buttons">
+    <button id="toggleModeBtn" class="map-btn active-mode">Mode: Marker</button>
+    <button id="removeMarkersBtn" class="map-btn">Remove All Markers</button>
+    <button id="removeLinesBtn" class="map-btn">Remove All Lines</button>
+</div>
+
 <div id="map"></div>
 
-<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<!-- Reliable RotatedMarker plugin -->
 <script src="https://cdn.jsdelivr.net/npm/leaflet-rotatedmarker@0.2.0/leaflet.rotatedMarker.min.js"></script>
 
 <script>
-    // ============================
-    //  GET INITIAL AIRCRAFT POSITION
-    // ============================
-    async function getInitialPos() {
+async function getInitialPos() {
+    try {
+        const latRes = await fetch('http://localhost:8800/json/position/latitude-deg');
+        const lonRes = await fetch('http://localhost:8800/json/position/longitude-deg');
+
+        const latJson = await latRes.json();
+        const lonJson = await lonRes.json();
+
+        return [latJson.value, lonJson.value];
+    } catch {
+        return [46.2381, 6.1089];
+    }
+}
+
+async function initMap() {
+    const initialPos = await getInitialPos();
+    const map = L.map('map').setView(initialPos, 15);
+
+    L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        { attribution: 'Tiles © Esri', maxZoom: 19 }
+    ).addTo(map);
+
+    // Plane marker
+    const planeIcon = L.icon({
+        iconUrl: 'plane.png',
+        iconSize: [50, 50],
+        iconAnchor: [25, 25],
+        className: 'white-plane'
+    });
+
+    const planeMarker = L.marker(initialPos, {
+        icon: planeIcon,
+        rotationAngle: 0,
+        rotationOrigin: 'center center'
+    }).addTo(map);
+
+    async function updatePlane() {
         try {
-            const latRes = await fetch('http://localhost:8800/json/position/latitude-deg');
-            const lonRes = await fetch('http://localhost:8800/json/position/longitude-deg');
+            const lat = (await (await fetch('http://localhost:8800/json/position/latitude-deg')).json()).value;
+            const lon = (await (await fetch('http://localhost:8800/json/position/longitude-deg')).json()).value;
+            const hdg = (await (await fetch('http://localhost:8800/json/orientation/heading-deg')).json()).value;
 
-            const latJson = await latRes.json();
-            const lonJson = await lonRes.json();
+            planeMarker.setLatLng([lat, lon]);
+            planeMarker.setRotationAngle(hdg - 90);
+        } catch {}
+    }
+    setInterval(updatePlane, 1000);
 
-            return [latJson.value, lonJson.value];
-        } catch (err) {
-            console.log("FlightGear not available, using fallback");
-            return [46.2381, 6.1089]; // fallback Geneva
-        }
+    // ============================
+    // MARKER MODE + LINE MODE
+    // ============================
+    let mode = "marker"; // "marker" or "line"
+    const toggleBtn = document.getElementById("toggleModeBtn");
+
+    toggleBtn.onclick = () => {
+        mode = (mode === "marker") ? "line" : "marker";
+        toggleBtn.innerHTML = "Mode: " + (mode === "marker" ? "Marker" : "Line");
+        toggleBtn.classList.toggle("active-mode");
+    };
+
+    // ============================
+    // USER MARKERS
+    // ============================
+    const userMarkers = [];
+
+    // ============================
+    // USER LINES
+    // ============================
+    const userLines = [];
+    let tempLinePointA = null;
+
+    function createDraggablePoint(latlng, onMove, onRemove) {
+        const marker = L.marker(latlng, { draggable: true }).addTo(map);
+
+        marker.on("drag", () => onMove(marker.getLatLng()));
+        marker.on("contextmenu", () => onRemove(marker));
+
+        return marker;
     }
 
-    // ============================
-    //  INIT MAP
-    // ============================
-    async function initMap() {
-        const initialPos = await getInitialPos();
-
-        const map = L.map('map').setView(initialPos, 15);
-
-        L.tileLayer(
-            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-            {
-                attribution: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics',
-                maxZoom: 19
-            }
-        ).addTo(map);
-
-        // ============================
-        //  PLANE MARKER
-        // ============================
-        const planeIcon = L.icon({
-            iconUrl: 'plane.png',
-            iconSize: [50, 50],
-            iconAnchor: [25, 25],
-            className: 'white-plane'
-        });
-
-        const planeMarker = L.marker(initialPos, {
-            icon: planeIcon,
-            rotationAngle: 0,
-            rotationOrigin: 'center center'
-        }).addTo(map);
-
-        async function updatePlane() {
-            try {
-                const latRes = await fetch('http://localhost:8800/json/position/latitude-deg');
-                const lonRes = await fetch('http://localhost:8800/json/position/longitude-deg');
-                const hdgRes = await fetch('http://localhost:8800/json/orientation/heading-deg');
-
-                const lat = (await latRes.json()).value;
-                const lon = (await lonRes.json()).value;
-                const hdg = (await hdgRes.json()).value;
-
-                planeMarker.setLatLng([lat, lon]);
-                planeMarker.setRotationAngle(hdg - 90);
-            } catch (err) {
-                console.log("FlightGear not available");
-            }
-        }
-
-        setInterval(updatePlane, 1000);
-
-        // ============================
-        //  USER MARKERS
-        // ============================
-        const userMarkers = [];
-
-        // Right-click map → add marker
-        map.on('contextmenu', function (e) {
+    map.on("click", function (e) {
+        if (mode === "marker") {
             const marker = L.marker(e.latlng, { draggable: true }).addTo(map);
-
             userMarkers.push(marker);
 
-            // Right-click marker → remove it
-            marker.on('contextmenu', function () {
+            marker.on("contextmenu", () => {
                 map.removeLayer(marker);
-                const idx = userMarkers.indexOf(marker);
-                if (idx !== -1) userMarkers.splice(idx, 1);
+                userMarkers.splice(userMarkers.indexOf(marker), 1);
             });
-        });
 
-        // ============================
-        //  REMOVE ALL MARKERS BUTTON
-        // ============================
-        const removeBtn = L.control({ position: 'topright' });
+        } else if (mode === "line") {
+            if (!tempLinePointA) {
+                // First point
+                tempLinePointA = e.latlng;
+            } else {
+                // Second point → create line
+                const pointA = tempLinePointA;
+                const pointB = e.latlng;
+                tempLinePointA = null;
 
-        removeBtn.onAdd = function () {
-            const btn = L.DomUtil.create('button', 'remove-markers-btn');
-            btn.innerHTML = "Remove All Markers";
-            btn.style.padding = "8px";
-            btn.style.background = "white";
-            btn.style.border = "2px solid black";
-            btn.style.cursor = "pointer";
+                const line = L.polyline([pointA, pointB], { color: "red", weight: 3 }).addTo(map);
 
-            btn.onclick = function () {
-                userMarkers.forEach(m => map.removeLayer(m));
-                userMarkers.length = 0;
-            };
+                const endpointA = createDraggablePoint(pointA, updateA, removeLine);
+                const endpointB = createDraggablePoint(pointB, updateB, removeLine);
 
-            return btn;
-        };
+                function updateA(newPos) {
+                    line.setLatLngs([newPos, endpointB.getLatLng()]);
+                }
+                function updateB(newPos) {
+                    line.setLatLngs([endpointA.getLatLng(), newPos]);
+                }
+                function removeLine(marker) {
+                    map.removeLayer(line);
+                    map.removeLayer(endpointA);
+                    map.removeLayer(endpointB);
+                    userLines.splice(userLines.indexOf(line), 1);
+                }
 
-        removeBtn.addTo(map);
-    }
+                userLines.push(line);
+            }
+        }
+    });
 
-    // Start map
-    initMap();
+    // ============================
+    // REMOVE BUTTONS
+    // ============================
+    document.getElementById("removeMarkersBtn").onclick = () => {
+        userMarkers.forEach(m => map.removeLayer(m));
+        userMarkers.length = 0;
+    };
+
+    document.getElementById("removeLinesBtn").onclick = () => {
+        userLines.forEach(line => map.removeLayer(line));
+        userLines.length = 0;
+    };
+}
+
+initMap();
 </script>
-
-
 
 </body>
 </html>
