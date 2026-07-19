@@ -59,7 +59,7 @@ FetchContent_MakeAvailable(sigslot)
 FetchContent_Declare(
     cpr
     GIT_REPOSITORY https://github.com/libcpr/cpr.git
-    GIT_TAG        master
+    GIT_TAG        1.11.0
 )
 FetchContent_MakeAvailable(cpr)
 FetchContent_Declare(
