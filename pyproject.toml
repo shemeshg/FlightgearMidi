@@ -19,7 +19,7 @@ wheel.packages = ["FlightgearMidi"]  # Bundles python folder
 
 cmake.args = [
     "-DCPR_FORCE_USE_SYSTEM_CURL=OFF",
-    "-DCPR_ENABLE_SSL=OFF",
+    "-DCPR_ENABLE_SSL=ON",
     "-DCMAKE_USE_OPENSSL=ON",
     "-DCURL_DISABLE_LIBPSL=ON",
     "-DCURL_USE_LIBPSL=OFF",
@@ -27,7 +27,7 @@ cmake.args = [
     "-DCPR_BUILD_SHARED_LIBS=OFF",  
     "-DBUILD_SHARED_LIBS=OFF",
     "-DCPR_USE_SYSTEM_LIB_PSL=ON",
-    " -DCPR_USE_SYSTEM_CURL=OFF"
+    " -DCPR_USE_SYSTEM_CURL=ON"
 ]
 
 
