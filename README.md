@@ -102,8 +102,12 @@ import FlightgearMidi
 
 # 🧪 Example
 
-Full example script:  
+Simplified example script:  
 [https://github.com/shemeshg/FlightgearMidi/blob/main/testPy/](https://github.com/shemeshg/FlightgearMidi/blob/main/testPy/)
+
+Complete example:
+[https://github.com/shemeshg/FlightgearMidi/blob/main/LaunchControlXL.py/](https://github.com/shemeshg/FlightgearMidi/blob/main/LaunchControlXL.py/)
+
 
 Run it:
 

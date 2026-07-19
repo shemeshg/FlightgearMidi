@@ -1,8 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Optional
 import sys
 import os
-
 
 from FlightgearMidiHelper import (
     main_loop,
@@ -11,143 +10,128 @@ from FlightgearMidiHelper import (
 )
 
 from FlightgearMidiUtils import (
-    add_mappings,
-    build_and_callback_mappings,
-    build_and_callback_pullers
+    apply_midi_bindings
 )
 
 # ---------------------------------------------------------------------------
-# APP STATE
+# DEVICE CLASS (formerly AppState)
 # ---------------------------------------------------------------------------
 
 @dataclass
-class AppState:
+class LaunchControlXL:
     midi: Optional[Any] = None
     midi_out: Optional[Any] = None
+
     previous_air_speed_color: Optional[int] = None
-    toggle_states: dict = None
+    toggle_states: dict = field(default_factory=dict)
 
-state = AppState()
-state.toggle_states = {}
+    # -------------------------------------------------------
+    # CONSTANTS (class-level)
+    # -------------------------------------------------------
 
-# ---------------------------------------------------------------------------
-# CONSTANTS
-# ---------------------------------------------------------------------------
+    COLOR = {
+        "off": 12,
+        "red_dim": 13,
+        "red": 15,
+        "red_blink": 11,
+        "yellow": 62,
+        "yellow_blink": 58,
+        "green_dim": 28,
+        "green": 60,
+        "green_blink": 56,
+        "amber_dim": 29,
+        "amber": 63,
+        "amber_blink": 59,
+        "high": 127,
+        "low": 0
+    }
 
-MIDI_INPUT_NAME = "FlightgearOut"
-MIDI_INPUT_INDEX = 0
+    FLAPS_LED_ID = 13 + 16 * 0
+    AIR_SPEED_LED_ID = 73
 
-MIDI_OUTPUT_NAME = "FlightgearIn"
-MIDI_OUTPUT_INDEX = 0
+    CARB_HEAT_LED_ID = 105
+    LANDING_LIGHTS_LED_ID = 106
+    TAXI_LIGHT_LED_ID = 107
 
-TELNET_HOST = "localhost"
-TELNET_PORT = "5500"
-HTTPD_PORT = "8800"
+    # -------------------------------------------------------
+    # CALLBACKS
+    # -------------------------------------------------------
 
-COLOR = {
-    "off": 12,
-    "red_dim": 13,
-    "red": 15,
-    "red_blink": 11,
-    "yellow": 62,
-    "yellow_blink": 58,
-    "green_dim": 28,
-    "green": 60,
-    "green_blink": 56,
-    "amber_dim": 29,
-    "amber": 63,
-    "amber_blink": 59,
-    "high": 127,
-    "low": 0
-}
+    def pull_indicated_air_speed(self, key: str, val: Any) -> None:
+        try:
+            speed = float(val)
+        except Exception:
+            return
 
-FLAPS_LED_ID = 13 + 16 * 0
-AIR_SPEED_LED_ID = 73
+        if speed > 70:
+            color = self.COLOR["off"]
+        elif speed >= 50:
+            color = self.COLOR["green"]
+        elif speed >= 40:
+            color = self.COLOR["yellow"]
+        else:
+            color = self.COLOR["red"]
 
-CARB_HEAT_LED_ID = 105
-LANDING_LIGHTS_LED_ID = 106
-TAXI_LIGHT_LED_ID = 107
+        if color != self.previous_air_speed_color:
+            self.previous_air_speed_color = color
+            self.midi_out.sendNoteOn(0, self.AIR_SPEED_LED_ID, color)
 
-# ---------------------------------------------------------------------------
-# CALLBACKS
-# ---------------------------------------------------------------------------
+    def pull_on_off(self, btn_id: int, key: str, val: str) -> None:
+        v = val.strip().lower().replace('"', '')
+        if v not in ("true", "false"):
+            return
 
+        is_on = (v == "true")
+        self.midi_out.sendNoteOn(0, btn_id,
+                                 self.COLOR["high"] if is_on else self.COLOR["low"])
 
+    def on_off_toggle(self, key: str, val: Any) -> None:
+        prev = self.toggle_states.get(key, False)
+        new = not prev
+        self.toggle_states[key] = new
 
+        cmd = "true" if new else "false"
+        self.midi.sendTerminalRaw(f"set {key} {cmd}")
 
+    def flaps_on(self, key: str, val: Any) -> None:
+        try:
+            flap = float(val)
+        except Exception:
+            return
 
+        if flap > 0.9:
+            color = self.COLOR["red"]
+        elif flap >= 0.6:
+            color = self.COLOR["yellow"]
+        elif flap >= 0.1:
+            color = self.COLOR["green"]
+        else:
+            color = self.COLOR["off"]
 
-def pull_indicated_air_speed_callback(key: str, val: Any) -> None:
-    try:
-        speed = float(val)
-    except Exception:
-        return
-
-    if speed > 70:
-        color = COLOR["off"]
-    elif speed >= 50:
-        color = COLOR["green"]
-    elif speed >= 40:
-        color = COLOR["yellow"]
-    else:
-        color = COLOR["red"]
-
-    if color != state.previous_air_speed_color:
-        state.previous_air_speed_color = color
-        state.midi_out.sendNoteOn(0, AIR_SPEED_LED_ID, color)
-
-
-def pull_on_off_callback(btn_id: int, key: str, val: str) -> None:
-    v = val.strip().lower()
-    v = v.replace('"', '') 
-    if v not in ("true", "false"):
-        return
-
-    is_on = (v == "true")
-    state.midi_out.sendNoteOn(0, btn_id, COLOR["high"] if is_on else COLOR["low"])
-
-
-def on_off_toggle_callback(key: str, val: Any) -> None:
-    # Per-property toggle state
-    prev = state.toggle_states.get(key, False)
-    new = not prev
-    state.toggle_states[key] = new
-
-    cmd = "true" if new else "false"
-    state.midi.sendTerminalRaw(f"set {key} {cmd}")
-
-
-def flaps_on_callback(key: str, val: Any) -> None:
-    try:
-        flap = float(val)
-    except Exception:
-        return
-
-    if flap > 0.9:
-        color = COLOR["red"]
-    elif flap >= 0.6:
-        color = COLOR["yellow"]
-    elif flap >= 0.1:
-        color = COLOR["green"]
-    else:
-        color = COLOR["off"]
-
-    state.midi_out.sendNoteOn(0, FLAPS_LED_ID, color)
+        self.midi_out.sendNoteOn(0, self.FLAPS_LED_ID, color)
 
 
 # ---------------------------------------------------------------------------
 # CONFIG LOADING
 # ---------------------------------------------------------------------------
 
-def loadConfigData() -> FlightgearMidi.DataConfig:
+
+
+
+
+def loadConfigData(ctrl: LaunchControlXL) -> FlightgearMidi.DataConfig:
     cfg = FlightgearMidi.DataConfig()
-    cfg.telnetHost = TELNET_HOST
-    cfg.telnetPort = TELNET_PORT
-    cfg.httpdPort = HTTPD_PORT
+    cfg.telnetHost = "localhost"
+    cfg.telnetPort = "5500"
+    cfg.httpdPort = "8800"
 
     midi_input = FlightgearMidi.DataConfigMidiInput()
-    midi_input.midiInputIdx = MIDI_INPUT_INDEX
-    midi_input.midiInputName = MIDI_INPUT_NAME
+    midi_input.midiInputIdx = 0
+    midi_input.midiInputName = "FlightgearOut"
+
+    # -------------------------------------------------------
+    # CONFIGURATION (kept here exactly as you wanted)
+    # -------------------------------------------------------
 
     mappings = [
         (0, 127, 0, 1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 77,
@@ -162,60 +146,62 @@ def loadConfigData() -> FlightgearMidi.DataConfig:
          "/controls/engines/current-engine/mixture"),
     ]
 
-    add_mappings(midi_input, mappings)
-
     toggle_mappings = [
-        (FlightgearMidi.MidiMsgType.NOTE_ON, CARB_HEAT_LED_ID,
+        (FlightgearMidi.MidiMsgType.NOTE_ON, ctrl.CARB_HEAT_LED_ID,
          "/controls/engines/current-engine/carb-heat"),
-        (FlightgearMidi.MidiMsgType.NOTE_ON, LANDING_LIGHTS_LED_ID,
+        (FlightgearMidi.MidiMsgType.NOTE_ON, ctrl.LANDING_LIGHTS_LED_ID,
          "/controls/lighting/landing-lights"),
-        (FlightgearMidi.MidiMsgType.NOTE_ON, TAXI_LIGHT_LED_ID,
+        (FlightgearMidi.MidiMsgType.NOTE_ON, ctrl.TAXI_LIGHT_LED_ID,
          "/controls/lighting/taxi-light"),
     ]
 
-    build_and_callback_mappings(midi_input, toggle_mappings, on_off_toggle_callback)
-
-    cfg.dataConfigMidiInputs.append(midi_input)
-
     puller_mappings = [
-        ("/controls/flight/flaps", FLAPS_LED_ID, flaps_on_callback),
+        ("/controls/flight/flaps", ctrl.FLAPS_LED_ID, ctrl.flaps_on),
         ("/instrumentation/airspeed-indicator/indicated-speed-kt",
-         AIR_SPEED_LED_ID, pull_indicated_air_speed_callback),
+         ctrl.AIR_SPEED_LED_ID, ctrl.pull_indicated_air_speed),
     ]
 
-    build_and_callback_pullers(
-        cfg.dataConfigPullerFgKeys,
-        puller_mappings,
+    # -------------------------------------------------------
+    # APPLY BINDINGS (extracted)
+    # -------------------------------------------------------
+
+    apply_midi_bindings(
+        cfg,
+        midi_input,
+        ctrl,
+        mappings,
         toggle_mappings,
-        pull_on_off_callback,
+        puller_mappings
     )
 
-
+    cfg.dataConfigMidiInputs.append(midi_input)
     return cfg
+
+
 
 # ---------------------------------------------------------------------------
 # MAIN
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    state.midi = FlightgearMidi.getMidiClientItf()
-    state.midi.pullerSleepInterval = 100
-    state.midi.setDataConfig(loadConfigData())
+    ctrl = LaunchControlXL()
+
+    ctrl.midi = FlightgearMidi.getMidiClientItf()
+    ctrl.midi.pullerSleepInterval = 100
+    ctrl.midi.setDataConfig(loadConfigData(ctrl))
 
     logger.info("Available MIDI input ports:\n%s",
-                "\n".join(" " + p for p in state.midi.getInPorts()))
+                "\n".join(" " + p for p in ctrl.midi.getInPorts()))
     logger.info("Available MIDI output ports:\n%s",
-                "\n".join(" " + p for p in state.midi.getOutPorts()))
+                "\n".join(" " + p for p in ctrl.midi.getOutPorts()))
 
-    if not state.midi.openLibreMidiOutPort(MIDI_OUTPUT_NAME, MIDI_OUTPUT_INDEX):
+    if not ctrl.midi.openLibreMidiOutPort("FlightgearIn", 0):
         logger.error("Failed to open MIDI output port.")
         sys.exit(1)
 
-    state.midi_out = state.midi.getLibreMidiOutPort(
-        MIDI_OUTPUT_NAME, MIDI_OUTPUT_INDEX
-    )
+    ctrl.midi_out = ctrl.midi.getLibreMidiOutPort("FlightgearIn", 0)
 
-    state.midi_out.sendNoteOn(0, FLAPS_LED_ID, COLOR["off"])
-    state.midi_out.sendNoteOn(0, AIR_SPEED_LED_ID, COLOR["off"])
+    ctrl.midi_out.sendNoteOn(0, ctrl.FLAPS_LED_ID, ctrl.COLOR["off"])
+    ctrl.midi_out.sendNoteOn(0, ctrl.AIR_SPEED_LED_ID, ctrl.COLOR["off"])
 
-    main_loop(state.midi)
+    main_loop(ctrl.midi)

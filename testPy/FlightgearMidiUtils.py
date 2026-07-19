@@ -121,3 +121,27 @@ def build_and_callback_pullers(
     pullers = build_pullers(puller_mappings, pull_on_off_callback)
     add_pullers(dataConfigPullerFgKeys, pullers)
 
+def apply_midi_bindings(cfg: FlightgearMidi.DataConfig,
+                        midi_input: FlightgearMidi.DataConfigMidiInput,
+                        ctrl: LaunchControlXL,
+                        mappings,
+                        toggle_mappings,
+                        puller_mappings) -> None:
+
+    # Standard CC mappings
+    add_mappings(midi_input, mappings)
+
+    # Toggle buttons
+    build_and_callback_mappings(
+        midi_input,
+        toggle_mappings,
+        ctrl.on_off_toggle
+    )
+
+    # Pullers
+    build_and_callback_pullers(
+        cfg.dataConfigPullerFgKeys,
+        puller_mappings,
+        toggle_mappings,
+        ctrl.pull_on_off,
+    )
