@@ -76,8 +76,11 @@ jobs:
           CIBW_SKIP: '*-musllinux_* *-manylinux_i686 *-win32 *-pp* *-cp39-* *-cp310-*'
           CIBW_BUILD_FRONTEND: build
           CIBW_TEST_COMMAND: ''
+          # Passes deployment rules to macOS to skip local version targets
           CIBW_ENVIRONMENT: CMAKE_BUILD_PARALLEL_LEVEL=4 MACOSX_DEPLOYMENT_TARGET=14.0
           CIBW_ENVIRONMENT_MACOS: CMAKE_BUILD_PARALLEL_LEVEL=4 MACOSX_DEPLOYMENT_TARGET=14.0
+          # Fixes Ubuntu container tracking by forcing standard OpenSSL development headers inside Docker
+          CIBW_BEFORE_ALL_LINUX: dnf install -y openssl-devel || yum install -y openssl-devel || apt-get update && apt-get install -y libssl-dev
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
           CIBW_ARCHS_LINUX: ${{ matrix.cibw_archs }}
           CIBW_ARCHS_MACOS: ${{ matrix.cibw_archs }}
