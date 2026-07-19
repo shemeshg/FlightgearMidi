@@ -6,7 +6,8 @@ You write automation logic in Python; the C++ layer handles:
 
 - MIDI input  
 - MIDI output  
-- FlightGear telnet commands  
+- FlightGear send telnet commands  
+- FlightGear receive http get commands  
 - Real‑time routing and callbacks  
 
 This gives you **low‑latency control** of aircraft systems using any MIDI device.
