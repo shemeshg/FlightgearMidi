@@ -16,7 +16,6 @@ requires-python = ">=3.9" # This is where Python 3.9 actually belongs!
 cmake.build-type = "Release"
 wheel.packages = ["FlightgearMidi"]  # Bundles python folder 
 
-
 cmake.args = [
     "-DCPR_FORCE_USE_SYSTEM_CURL=OFF",
     "-DCPR_USE_SYSTEM_CURL=OFF",
@@ -30,8 +29,6 @@ cmake.args = [
     "-DCURL_DISABLE_LIBPSL=ON",
     "-DCURL_USE_LIBPSL=OFF",
     "-DCPR_ENABLE_LIBPSL=OFF",
-    "-DCPR_USE_SYSTEM_LIB_PSL=OFF"
+    "-DCPR_USE_SYSTEM_LIB_PSL=OFF"  
 ]
-
-
 # [[[end]]]
