@@ -78,12 +78,18 @@ jobs:
           CIBW_TEST_COMMAND: ''
           CIBW_ENVIRONMENT: CMAKE_BUILD_PARALLEL_LEVEL=4 MACOSX_DEPLOYMENT_TARGET=14.0
           CIBW_ENVIRONMENT_MACOS: CMAKE_BUILD_PARALLEL_LEVEL=4 MACOSX_DEPLOYMENT_TARGET=14.0
-          # Clean structural condition check safely isolated for any manylinux container variant
+          
+          # Force meson and ninja globally inside ALL cibuildwheel build environments (including Linux Docker images)
+          CIBW_BEFORE_ALL: python -m pip install meson ninja
+          
+          # Safely handles native package dependencies inside Linux Docker images
           CIBW_BEFORE_ALL_LINUX: >
+            python -m pip install meson ninja &&
             if command -v dnf &> /dev/null; then dnf install -y openssl-devel;
             elif command -v yum &> /dev/null; then yum install -y openssl-devel;
             elif command -v apt-get &> /dev/null; then apt-get update && apt-get install -y libssl-dev;
             fi
+            
           CIBW_ARCHS: ${{ matrix.cibw_archs }}
           CIBW_ARCHS_LINUX: ${{ matrix.cibw_archs }}
           CIBW_ARCHS_MACOS: ${{ matrix.cibw_archs }}
