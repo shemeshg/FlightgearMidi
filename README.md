@@ -103,11 +103,9 @@ import FlightgearMidi
 
 # 🧪 Example
 
-Simplified example script:  
-[https://github.com/shemeshg/FlightgearMidi/blob/main/testPy/](https://github.com/shemeshg/FlightgearMidi/blob/main/testPy/)
+Simplified example script: [https://github.com/shemeshg/FlightgearMidi/blob/main/testPy/test.py](https://github.com/shemeshg/FlightgearMidi/blob/main/testPy/test.py)
 
-Complete example:
-[https://github.com/shemeshg/FlightgearMidi/blob/main/LaunchControlXL.py/](https://github.com/shemeshg/FlightgearMidi/blob/main/LaunchControlXL.py/)
+Complete example: [https://github.com/shemeshg/FlightgearMidi/blob/main/testPy/LaunchControlXL.py](https://github.com/shemeshg/FlightgearMidi/blob/main/testPy/LaunchControlXL.py)
 
 
 Run it:
