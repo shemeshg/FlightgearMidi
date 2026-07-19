@@ -21,10 +21,10 @@
         .top-buttons {
             position: absolute;
             top: 10px;
-            right: 10px;   /* moved to right */
+            right: 10px;
             z-index: 1000;
             display: flex;
-            flex-direction: column; /* vertical stack */
+            flex-direction: column;
             gap: 10px;
         }
         .map-btn {
@@ -106,7 +106,7 @@ async function initMap() {
     // ============================
     // MARKER MODE + LINE MODE
     // ============================
-    let mode = "marker"; // "marker" or "line"
+    let mode = "marker";
     const toggleBtn = document.getElementById("toggleModeBtn");
 
     toggleBtn.onclick = () => {
@@ -147,10 +147,8 @@ async function initMap() {
 
         } else if (mode === "line") {
             if (!tempLinePointA) {
-                // First point
                 tempLinePointA = e.latlng;
             } else {
-                // Second point → create line
                 const pointA = tempLinePointA;
                 const pointB = e.latlng;
                 tempLinePointA = null;
@@ -170,10 +168,12 @@ async function initMap() {
                     map.removeLayer(line);
                     map.removeLayer(endpointA);
                     map.removeLayer(endpointB);
-                    userLines.splice(userLines.indexOf(line), 1);
+
+                    const idx = userLines.findIndex(obj => obj.line === line);
+                    if (idx !== -1) userLines.splice(idx, 1);
                 }
 
-                userLines.push(line);
+                userLines.push({ line, endpointA, endpointB });
             }
         }
     });
@@ -187,7 +187,11 @@ async function initMap() {
     };
 
     document.getElementById("removeLinesBtn").onclick = () => {
-        userLines.forEach(line => map.removeLayer(line));
+        userLines.forEach(obj => {
+            map.removeLayer(obj.line);
+            map.removeLayer(obj.endpointA);
+            map.removeLayer(obj.endpointB);
+        });
         userLines.length = 0;
     };
 }
