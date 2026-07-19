@@ -24,7 +24,7 @@ template_dict = {
            {
                 "LIB":  "cpr",
                 "GIT_REPOSITORY" : "https://github.com/libcpr/cpr.git" ,
-                "GIT_TAG" : "master",
+                "GIT_TAG" : "1.10.5",
                 "target_link": "cpr::cpr"
            },
            {
