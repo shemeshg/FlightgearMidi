@@ -1,0 +1,119 @@
+name: Build Python wheels
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-wheels:
+    name: Build wheels on ${{ matrix.os_name }}
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os_name: windows-amd64
+            runs-on: windows-2022
+            python_arch: x64
+            cibw_archs: AMD64
+          - os_name: windows-arm
+            runs-on: windows-11-arm
+            python_arch: arm64
+            cibw_archs: ARM64
+          - os_name: ubuntu-amd64
+            runs-on: ubuntu-24.04
+            python_arch: x64
+            cibw_archs: x86_64
+          - os_name: ubuntu-arm64
+            runs-on: ubuntu-24.04-arm
+            python_arch: arm64
+            cibw_archs: aarch64
+          - os_name: macos
+            runs-on: macos-14
+            python_arch: arm64
+            cibw_archs: arm64
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          architecture: ${{ matrix.python_arch }}
+
+      - name: Install build tools
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build cibuildwheel cmake ninja meson
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            pkg-config \
+            libasound2-dev \
+            libudev-dev \
+            libjack-jackd2-dev \
+            libpipewire-0.3-dev
+
+      - name: Build wheels with cibuildwheel
+        shell: bash
+        env:
+          CMAKE_BUILD_PARALLEL_LEVEL: 4
+          PIP_DISABLE_PIP_VERSION_CHECK: 1
+          CIBW_BUILD: cp311-* cp312-* cp313-* cp314-*
+          CIBW_SKIP: '*-musllinux_* *-manylinux_i686 *-win32 *-pp* *-cp39-* *-cp310-*'
+          CIBW_BUILD_FRONTEND: build
+          CIBW_TEST_COMMAND: ''
+          CIBW_ENVIRONMENT: CMAKE_BUILD_PARALLEL_LEVEL=4
+          CIBW_ARCHS: ${{ matrix.cibw_archs }}
+          CIBW_ARCHS_LINUX: ${{ matrix.cibw_archs }}
+          CIBW_ARCHS_MACOS: ${{ matrix.cibw_archs }}
+          CIBW_ARCHS_WINDOWS: ${{ matrix.cibw_archs }}
+        run: python -m cibuildwheel --output-dir wheelhouse
+
+      - name: Show build architecture and wheel files
+        shell: bash
+        run: |
+          echo "Runner OS: $RUNNER_OS"
+          echo "Runner architecture: $(uname -m)"
+          echo "Python architecture: $(python -c 'import platform; print(platform.machine())')"
+          ls -la wheelhouse || true
+
+      - name: Upload wheel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os_name }}
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+
+  release:
+    name: Publish wheels to GitHub Release
+    needs: build-wheels
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: wheels-*
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.whl
+          generate_release_notes: true
