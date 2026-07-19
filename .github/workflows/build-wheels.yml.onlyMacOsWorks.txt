@@ -76,7 +76,14 @@ jobs:
             libudev-dev \
             libjack-jackd2-dev \
             libpipewire-0.3-dev \
-            libssl-dev
+            libssl-dev \
+            libcurl4-openssl-dev  \
+            libpsl-dev \
+            cmake \
+            debmake \
+            devscripts \
+            debhelper
+
 
       - name: Configure Windows toolchain
         if: runner.os == 'Windows'
