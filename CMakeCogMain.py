@@ -2,7 +2,7 @@ from jinja2 import Environment, FileSystemLoader
 import os
 
 template_dict = {
-           "APP_VER": "0.13.0",
+           "APP_VER": "0.14.0",
            "PROGRAM_NAME": "program-changer",
            "add_subdirectory_lib": ["MyLib"],
            "add_subdirectory_header_only": ["FlightgearMidi"]
