@@ -118,8 +118,6 @@ class LaunchControlXL:
 
     def loadConfigData(self, cfg: DataConfig, midiClientItf):
 
-
-
         self.midi = midiClientItf
 
         midi_input = FlightgearMidi.DataConfigMidiInput()
@@ -211,7 +209,4 @@ if __name__ == "__main__":
     launchControlXL = LaunchControlXL()
     launchControlXL.loadConfigData(cfg, midiClientItf)
     
-
-
-
     main_loop(midiClientItf)
