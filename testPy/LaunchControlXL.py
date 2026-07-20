@@ -116,7 +116,7 @@ class LaunchControlXL:
     # CONFIG LOADING
     # ---------------------------------------------------------------------------
 
-    def loadConfigData(self, cfg: DataConfig, midiClientItf):
+    def loadConfigData(self, cfg: Any, midiClientItf):
 
         self.midi = midiClientItf
 
