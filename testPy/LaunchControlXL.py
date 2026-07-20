@@ -119,15 +119,32 @@ class LaunchControlXL:
 
 
 
-def loadConfigData(ctrl: LaunchControlXL) -> FlightgearMidi.DataConfig:
-    cfg = FlightgearMidi.DataConfig()
-    cfg.telnetHost = "localhost"
-    cfg.telnetPort = "5500"
-    cfg.httpdPort = "8800"
+def loadConfigData(cfg: DataConfig, midiClientItf):
+
+
+    ctrl = LaunchControlXL()
+    ctrl.midi = midiClientItf
 
     midi_input = FlightgearMidi.DataConfigMidiInput()
     midi_input.midiInputIdx = 0
     midi_input.midiInputName = "FlightgearOut"
+
+    logger.info("Available MIDI input ports:\n%s",
+                "\n".join(" " + p for p in ctrl.midi.getInPorts()))
+    logger.info("Available MIDI output ports:\n%s",
+                "\n".join(" " + p for p in ctrl.midi.getOutPorts()))
+
+    if not ctrl.midi.openLibreMidiOutPort("FlightgearIn", 0):
+        logger.error("Failed to open MIDI output port.")
+        sys.exit(1)
+
+    ctrl.midi_out = ctrl.midi.getLibreMidiOutPort("FlightgearIn", 0)
+
+    ctrl.midi_out.sendNoteOn(0, ctrl.FLAPS_LED_ID, ctrl.COLOR["off"])
+    ctrl.midi_out.sendNoteOn(0, ctrl.AIR_SPEED_LED_ID, ctrl.COLOR["off"])
+
+
+
 
     # -------------------------------------------------------
     # CONFIGURATION (kept here exactly as you wanted)
@@ -176,7 +193,8 @@ def loadConfigData(ctrl: LaunchControlXL) -> FlightgearMidi.DataConfig:
     )
 
     cfg.dataConfigMidiInputs.append(midi_input)
-    return cfg
+    ctrl.midi.setDataConfig(cfg)
+    
 
 
 
@@ -185,24 +203,17 @@ def loadConfigData(ctrl: LaunchControlXL) -> FlightgearMidi.DataConfig:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    ctrl = LaunchControlXL()
+    cfg = FlightgearMidi.DataConfig()
+    cfg.telnetHost = "localhost"
+    cfg.telnetPort = "5500"
+    cfg.httpdPort = "8800"
 
-    ctrl.midi = FlightgearMidi.getMidiClientItf()
-    ctrl.midi.pullerSleepInterval = 100
-    ctrl.midi.setDataConfig(loadConfigData(ctrl))
+    midiClientItf = FlightgearMidi.getMidiClientItf()
+    midiClientItf.pullerSleepInterval = 100
 
-    logger.info("Available MIDI input ports:\n%s",
-                "\n".join(" " + p for p in ctrl.midi.getInPorts()))
-    logger.info("Available MIDI output ports:\n%s",
-                "\n".join(" " + p for p in ctrl.midi.getOutPorts()))
+    loadConfigData(cfg, midiClientItf)
+    
 
-    if not ctrl.midi.openLibreMidiOutPort("FlightgearIn", 0):
-        logger.error("Failed to open MIDI output port.")
-        sys.exit(1)
 
-    ctrl.midi_out = ctrl.midi.getLibreMidiOutPort("FlightgearIn", 0)
 
-    ctrl.midi_out.sendNoteOn(0, ctrl.FLAPS_LED_ID, ctrl.COLOR["off"])
-    ctrl.midi_out.sendNoteOn(0, ctrl.AIR_SPEED_LED_ID, ctrl.COLOR["off"])
-
-    main_loop(ctrl.midi)
+    main_loop(midiClientItf)
