@@ -178,7 +178,7 @@ class LaunchControlXL:
         # -------------------------------------------------------
 
         apply_midi_bindings(
-            cfg,
+            cfg.dataConfigPullerFgKeys,
             midi_input,
             self.on_off_toggle,
             self.pull_on_off,
