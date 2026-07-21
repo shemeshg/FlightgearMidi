@@ -102,7 +102,7 @@ class LaunchControlXL:
 
         if flap > 0.9:
             color = self.COLOR["red"]
-        elif flap >= 0.6:
+        elif flap >= 0.5:
             color = self.COLOR["yellow"]
         elif flap >= 0.1:
             color = self.COLOR["green"]
@@ -116,7 +116,7 @@ class LaunchControlXL:
     # CONFIG LOADING
     # ---------------------------------------------------------------------------
 
-    def loadConfigData(self, cfg: DataConfig, midiClientItf):
+    def loadConfigData(self, cfg: Any, midiClientItf):
 
         self.midi = midiClientItf
 
