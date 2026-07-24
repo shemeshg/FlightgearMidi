@@ -14,7 +14,7 @@ from FlightgearMidiUtils import (
 )
 
 # ---------------------------------------------------------------------------
-# DEVICE CLASS (formerly AppState)
+# DEVICE CLASS
 # ---------------------------------------------------------------------------
 
 @dataclass
@@ -142,7 +142,7 @@ class LaunchControlXL:
 
 
         # -------------------------------------------------------
-        # CONFIGURATION (kept here exactly as you wanted)
+        # CONFIGURATION 
         # -------------------------------------------------------
 
         mappings = [

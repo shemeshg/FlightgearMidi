@@ -14,7 +14,7 @@ from FlightgearMidiUtils import (
 )
 
 # ---------------------------------------------------------------------------
-# DEVICE CLASS (formerly AppState)
+# DEVICE CLASS 
 # ---------------------------------------------------------------------------
 
 @dataclass
@@ -27,7 +27,7 @@ class LaunchControlXL:
 
 
     # -------------------------------------------------------
-    # CONSTANTS (class-level)
+    # CONSTANTS 
     # -------------------------------------------------------
 
     COLOR = {
@@ -142,7 +142,7 @@ class LaunchControlXL:
 
 
         # -------------------------------------------------------
-        # CONFIGURATION (kept here exactly as you wanted)
+        # CONFIGURATION 
         # -------------------------------------------------------
 
         mappings = [
@@ -174,7 +174,7 @@ class LaunchControlXL:
         ]
 
         # -------------------------------------------------------
-        # APPLY BINDINGS (extracted)
+        # APPLY BINDINGS
         # -------------------------------------------------------
 
         apply_midi_bindings(
