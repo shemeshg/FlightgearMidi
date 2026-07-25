@@ -191,8 +191,10 @@ midi.startMidiClient()
 if not midi.openLibreMidiOutPort("FlightgearIn", 0):
     logger.error("Failed to open MIDI output port.")
     sys.exit(1)
-midiOut = midi.getLibreMidiOutPort("Flightgear", 0)
+midiOut = midi.getLibreMidiOutPort("FlightgearIn", 0)
+# sendNoteOn, sendNoteOff, sendControlChange
 midiOut.sendNoteOn(0, 73, 60)
+
 ```
 
 ---
