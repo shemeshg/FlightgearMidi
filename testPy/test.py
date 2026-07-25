@@ -24,17 +24,6 @@ def flaps_on_callback(key, val):
     else:
         print("0%")
 
-    #if val:
-    #    for vel in range(4,5):
-    #        msg = mido.Message('note_on', note=13, velocity=vel, channel=0)
-    #        outport.send(msg)
-    #    print("Send LED OFF")
-    #else:
-    #    for vel in range(3,4):
-    #        msg = mido.Message('note_on', note=13, velocity=vel, channel=0)
-    #        outport.send(msg)
-    #    print("Send LED ON")
-
 
 def loadConfigData():
     cfg = FlightgearMidi.DataConfig()
@@ -96,16 +85,6 @@ def loadConfigData():
     )
 
     cfg.dataConfigMidiInputs.append(midi_input)
-
-    # --- FG PULLER KEYS ---
-    #pull_throttle = FlightgearMidi.DataConfigPullerFgKey()
-    #pull_throttle.fgKetPath = "/controls/engines/engine[0]/throttle"
-    #pull_throttle.callback = lambda key, val: print(f"my key {key} val {val}")
-    #cfg.dataConfigPullerFgKeys.append(pull_throttle)
-
-    #pull_rudder = FlightgearMidi.DataConfigPullerFgKey()
-    #pull_rudder.fgKetPath = "/controls/flight/rudder"
-    #cfg.dataConfigPullerFgKeys.append(pull_rudder)
 
     pull_flaps = FlightgearMidi.DataConfigPullerFgKey()
     pull_flaps.fgKetPath = "/controls/flight/flaps"

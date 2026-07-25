@@ -188,6 +188,9 @@ midi.startMidiClient()
 ### 8. Send MIDI output
 
 ```python
+if not midi.openLibreMidiOutPort("FlightgearIn", 0):
+    logger.error("Failed to open MIDI output port.")
+    sys.exit(1)
 midiOut = midi.getLibreMidiOutPort("Flightgear", 0)
 midiOut.sendNoteOn(0, 73, 60)
 ```
