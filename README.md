@@ -111,7 +111,8 @@ Complete example: [https://github.com/shemeshg/FlightgearMidi/blob/main/testPy/L
 Run it:
 
 ```bash
-python3 testPy/test.py
+source .venv/bin/activate
+python testPy/test.py
 ```
 
 ---
