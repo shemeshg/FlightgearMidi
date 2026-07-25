@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from FlightgearMidiHelper import main_loop, FlightgearMidi, logger
-from LaunchControlXLAll import LaunchControlXLAll
+from FgLibHelpers.FlightgearMidiHelper import main_loop, FlightgearMidi, logger
+from FgLibHelpers.LaunchControlXLAll import LaunchControlXLAll
 
 
 @dataclass

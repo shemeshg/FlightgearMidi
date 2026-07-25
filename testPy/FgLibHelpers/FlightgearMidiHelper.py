@@ -11,7 +11,7 @@ from typing import Any, Iterable, Tuple
 # ---------------------------------------------------------------------------
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-module_dir = os.path.join(script_dir, "..", "build", "FlightgearMidi")
+module_dir = os.path.join(script_dir, "..","..", "build", "FlightgearMidi")
 sys.path.append(module_dir)
 
 import FlightgearMidi

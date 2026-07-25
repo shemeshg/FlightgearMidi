@@ -1,4 +1,4 @@
-from FlightgearMidiHelper import (
+from .FlightgearMidiHelper import (
     FlightgearMidi
 )
 

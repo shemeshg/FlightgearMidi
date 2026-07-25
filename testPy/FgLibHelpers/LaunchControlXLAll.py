@@ -2,8 +2,8 @@ from dataclasses import dataclass, field
 from typing import Any, Optional, Dict, List
 import sys
 
-from FlightgearMidiUtils import apply_midi_bindings
-from FlightgearMidiHelper import FlightgearMidi, logger
+from .FlightgearMidiUtils import apply_midi_bindings
+from .FlightgearMidiHelper import FlightgearMidi, logger
 
 # ---------------------------------------------------------------------------
 # DEVICE CLASS
