@@ -18,9 +18,9 @@ midi = FlightgearMidi.getMidiClientItf()
 midi.setDataConfig(cfg)
 midi.startMidiClient()
 if midi.getIsTelnetRunning():    
-    print(midi.getValue("/orientation/heading-deg"))
+    print(midi.debugTelnetGet("/orientation/heading-deg"))
     # async multiple requests
-    print(midi.updateQueryMapVals({"/orientation/heading-deg": ""}))
+    print(midi.debugHttpGet({"/orientation/heading-deg": ""}))
     user_input = input()   
  
 

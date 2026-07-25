@@ -35,6 +35,6 @@ public:
     virtual LibreMidiOutPort *getLibreMidiOutPort(std::string midiOutputName, int midiOutputIdx) =0;
     virtual ~MidiClientItf() = default;
 
-    virtual  std::unordered_map<std::string, std::string> updateQueryMapVals(std::unordered_map<std::string, std::string> &requestUrls) = 0;
-    virtual std::string getValue(const std::string &path) = 0;
+    virtual  std::unordered_map<std::string, std::string> debugHttpGet(std::unordered_map<std::string, std::string> &requestUrls) = 0;
+    virtual std::string debugTelnetGet(const std::string &path) = 0;
 };

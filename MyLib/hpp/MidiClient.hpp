@@ -100,7 +100,7 @@ public:
     }
 
     //- {fn}
-    std::unordered_map<std::string, std::string>  updateQueryMapVals(std::unordered_map<std::string, std::string> &requestUrls) override
+    std::unordered_map<std::string, std::string>  debugHttpGet(std::unordered_map<std::string, std::string> &requestUrls) override
     //-only-file body
     {
         httpdClient.updateQueryMapVals(requestUrls);
@@ -108,7 +108,7 @@ public:
     }
 
     //- {fn}
-    std::string getValue(const std::string &path) override
+    std::string debugTelnetGet(const std::string &path) override
     //-only-file body
     {
         return telnetClient.getValue(path);
