@@ -7,6 +7,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 //- {include-header}
 #include "DataConfig.hpp" //- #include "DataConfig.h"
@@ -33,4 +34,7 @@ public:
     virtual bool openLibreMidiOutPort(std::string midiOutputName, int midiOutputIdx) =0;
     virtual LibreMidiOutPort *getLibreMidiOutPort(std::string midiOutputName, int midiOutputIdx) =0;
     virtual ~MidiClientItf() = default;
+
+    virtual  std::unordered_map<std::string, std::string> updateQueryMapVals(std::unordered_map<std::string, std::string> &requestUrls) = 0;
+    virtual std::string getValue(const std::string &path) = 0;
 };

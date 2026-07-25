@@ -99,6 +99,22 @@ public:
         }
     }
 
+    //- {fn}
+    std::unordered_map<std::string, std::string>  updateQueryMapVals(std::unordered_map<std::string, std::string> &requestUrls) override
+    //-only-file body
+    {
+        httpdClient.updateQueryMapVals(requestUrls);
+        return requestUrls;
+    }
+
+    //- {fn}
+    std::string getValue(const std::string &path) override
+    //-only-file body
+    {
+        return telnetClient.getValue(path);
+    }
+
+
     //- {function} 0 2
     const DataConfig getDataConfig() const override
     //-only-file body

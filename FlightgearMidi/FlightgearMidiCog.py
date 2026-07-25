@@ -117,7 +117,8 @@ m.add_class(PyClass(
     defs=[
         "getDataConfig", "setDataConfig", "startMidiClient", "getIsTelnetRunning",
         "getInPorts", "getOutPorts", "setIsTerminalDebugMode", "sendTerminalRaw",
-        "getIsTelnetDisconnectedSignal", "openLibreMidiOutPort"
+        "getIsTelnetDisconnectedSignal", "openLibreMidiOutPort", "updateQueryMapVals",
+        "getValue"
     ],
     defs_pointer=["getLibreMidiOutPort"],
     defs_rw=["pullerSleepInterval"]

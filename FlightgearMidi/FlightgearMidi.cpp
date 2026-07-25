@@ -57,6 +57,8 @@ PYBIND11_MODULE(FlightgearMidi, m)
         .def("sendTerminalRaw", &MidiClientItf::sendTerminalRaw)
         .def("getIsTelnetDisconnectedSignal", &MidiClientItf::getIsTelnetDisconnectedSignal)
         .def("openLibreMidiOutPort", &MidiClientItf::openLibreMidiOutPort)
+        .def("updateQueryMapVals", &MidiClientItf::updateQueryMapVals)
+        .def("getValue", &MidiClientItf::getValue)
         .def("getLibreMidiOutPort", &MidiClientItf::getLibreMidiOutPort,
              py::return_value_policy::reference_internal)
         .def_readwrite("pullerSleepInterval", &MidiClientItf::pullerSleepInterval)
