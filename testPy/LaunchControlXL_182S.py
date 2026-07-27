@@ -60,6 +60,9 @@ class LaunchControlXL(LaunchControlXLAll):
 
             ("/instrumentation/airspeed-indicator/indicated-speed-kt",
              self.AIR_SPEED_LED_ID, self.pull_indicated_air_speed),
+
+             ("/orientation/roll-deg",
+                          self.ROLL_DEG_ID, self.pull_roll_deg),
         ]
 
 

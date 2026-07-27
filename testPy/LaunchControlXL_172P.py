@@ -47,6 +47,8 @@ class LaunchControlXL(LaunchControlXLAll):
             ("/controls/flight/flaps", self.FLAPS_LED_ID, self.flaps_on),
             ("/instrumentation/airspeed-indicator/indicated-speed-kt",
             self.AIR_SPEED_LED_ID, self.pull_indicated_air_speed),
+            ("/orientation/roll-deg",
+                                self.ROLL_DEG_ID, self.pull_roll_deg),            
         ]
 
 

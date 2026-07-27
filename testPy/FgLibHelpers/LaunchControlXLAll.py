@@ -15,6 +15,7 @@ class LaunchControlXLAll:
     midi_out: Optional[Any] = None
 
     previous_air_speed_color: Optional[int] = None
+    previous_roll_deg_color: Optional[int] = None
     toggle_states: Dict[str, bool] = field(default_factory=dict)
 
     # Instance-level lists (class-level mutables are dangerous)
@@ -45,6 +46,7 @@ class LaunchControlXLAll:
 
     FLAPS_LED_ID = 13 + 16 * 0
     AIR_SPEED_LED_ID = 73
+    ROLL_DEG_ID = 74
 
     CARB_HEAT_LED_ID = 105
     LANDING_LIGHTS_LED_ID = 106
@@ -63,6 +65,23 @@ class LaunchControlXLAll:
     # -------------------------------------------------------
     # CALLBACKS
     # -------------------------------------------------------
+
+    def pull_roll_deg(self, key: str, val: str) -> None:
+        try:
+            speed = float(val)
+        except ValueError:
+            return
+
+        if speed < 35:
+            color = self.COLOR["off"]
+        elif speed < 45:
+            color = self.COLOR["yellow"]
+        else:
+            color = self.COLOR["red"]
+
+        if color != self.previous_roll_deg_color:
+            self.previous_roll_deg_color = color
+            self.midi_out.sendNoteOn(0, self.ROLL_DEG_ID, color)
 
     def pull_indicated_air_speed(self, key: str, val: str) -> None:
         try:
