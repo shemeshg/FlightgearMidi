@@ -4,34 +4,21 @@ import sys
 
 from .FlightgearMidiUtils import apply_midi_bindings
 from .FlightgearMidiHelper import FlightgearMidi, logger
-from .FlightgearMidiUtils import update_led, pull_generic as fg_pull_generic
+from .FlightgearMidiUtils import pull_generic as fg_pull_generic
 
-
-# ---------------------------------------------------------------------------
-# DEVICE CLASS
-# ---------------------------------------------------------------------------
 
 @dataclass
 class LaunchControlXLAll:
     midi: Optional[Any] = None
     midi_out: Optional[Any] = None
 
-
-    
-
-    # Store previous LED colors by LED ID
     previous_colors: Dict[int, Optional[int]] = field(default_factory=dict)
-
     toggle_states: Dict[str, bool] = field(default_factory=dict)
 
     mappings: List[Any] = field(default_factory=list)
     toggle_mappings: List[Any] = field(default_factory=list)
     puller_mappings: List[Any] = field(default_factory=list)
     puller_config: Optional[Any] = None
-
-    # -------------------------------------------------------
-    # CONSTANTS
-    # -------------------------------------------------------
 
     COLOR = {
         "off": 12,
@@ -58,57 +45,36 @@ class LaunchControlXLAll:
     LANDING_LIGHTS_LED_ID = 106
     TAXI_LIGHT_LED_ID = 107
 
+    def set_mappings(self):
+        raise NotImplementedError
 
-    # -------------------------------------------------------
-    # ABSTRACT METHOD
-    # -------------------------------------------------------
+    def pull_generic(self, key, val):
+        fg_pull_generic(self.midi_out, self.previous_colors,
+                        self.puller_config, key, val)
 
-    def set_mappings(self) -> None:
-        raise NotImplementedError("set_mappings() must be implemented in subclass")
-
-
-    def pull_generic(self, key: str, val: str) -> None:
-        fg_pull_generic(self, key, val)
-
-
-    # -------------------------------------------------------
-    # OTHER CALLBACKS
-    # -------------------------------------------------------
-
-    def pull_on_off(self, btn_id: int, key: str, val: str) -> None:
+    def pull_on_off(self, btn_id, key, val):
         v = val.strip().lower().replace('"', '')
         if v not in ("true", "false"):
             return
-
         is_on = (v == "true")
         self.midi_out.sendNoteOn(
             0, btn_id,
             self.COLOR["high"] if is_on else self.COLOR["low"]
         )
 
-    def on_off_toggle(self, key: str, val: Any) -> None:
+    def on_off_toggle(self, key, val):
         new_state = not self.toggle_states.get(key, False)
         self.toggle_states[key] = new_state
         self.midi.sendTerminalRaw(f"set {key} {'true' if new_state else 'false'}")
 
-    # -------------------------------------------------------
-    # CONFIG LOADING
-    # -------------------------------------------------------
-
-    def loadConfigData(self, cfg: Any, midiClientItf) -> None:
+    def loadConfigData(self, cfg, midiClientItf):
         self.midi = midiClientItf
 
         midi_input = FlightgearMidi.DataConfigMidiInput()
         midi_input.midiInputIdx = 0
         midi_input.midiInputName = "FlightgearOut"
 
-        logger.info("Available MIDI input ports:\n%s",
-                    "\n".join(" " + p for p in self.midi.getInPorts()))
-        logger.info("Available MIDI output ports:\n%s",
-                    "\n".join(" " + p for p in self.midi.getOutPorts()))
-
         if not self.midi.openLibreMidiOutPort("FlightgearIn", 0):
-            logger.error("Failed to open MIDI output port.")
             sys.exit(1)
 
         self.midi_out = self.midi.getLibreMidiOutPort("FlightgearIn", 0)

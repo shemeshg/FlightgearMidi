@@ -1,10 +1,20 @@
 from dataclasses import dataclass
 from FgLibHelpers.FlightgearMidiHelper import main_loop, FlightgearMidi, logger
 from FgLibHelpers.LaunchControlXLAll import LaunchControlXLAll
+from FgLibHelpers.FlightgearMidiUtils import pull_generic
 
 
 @dataclass
 class LaunchControlXL(LaunchControlXLAll):
+
+    def pull_generic_wrapper(self, key, val):
+        pull_generic(
+            self.midi_out,
+            self.previous_colors,
+            self.puller_config,
+            key,
+            val
+        )
 
     def set_mappings(self):
         """
@@ -52,58 +62,55 @@ class LaunchControlXL(LaunchControlXLAll):
         ]
 
         # -------------------------------------------------------
-        # DECLARATIVE PULLER TABLE (CLASS ATTRIBUTE!)
+        # DECLARATIVE PULLER TABLE (DIRECT COLOR VALUES)
         # -------------------------------------------------------
 
-        self.puller_config  = {
-                "/orientation/roll-deg": {
-                    "led_id": self.ROLL_DEG_ID,
-                    "use_abs": True,
-                    "track_previous": True,
-                    "thresholds": [
-                        (lambda v: v < 35, "off"),
-                        (lambda v: v < 45, "yellow"),
-                        (lambda v: True, "red"),
-                    ],
-                },
+        self.puller_config = {
+            "/orientation/roll-deg": {
+                "led_id": self.ROLL_DEG_ID,
+                "use_abs": True,
+                "track_previous": True,
+                "thresholds": [
+                    (lambda v: v < 35, self.COLOR["off"]),
+                    (lambda v: v < 45, self.COLOR["yellow"]),
+                    (lambda v: True, self.COLOR["red"]),
+                ],
+            },
 
-                "/instrumentation/airspeed-indicator/indicated-speed-kt": {
-                    "led_id": self.AIR_SPEED_LED_ID,
-                    "use_abs": False,
-                    "track_previous": True,
-                    "thresholds": [
-                        (lambda v: v > 70, "off"),
-                        (lambda v: v >= 50, "green"),
-                        (lambda v: v >= 40, "yellow"),
-                        (lambda v: True, "red"),
-                    ],
-                },
+            "/instrumentation/airspeed-indicator/indicated-speed-kt": {
+                "led_id": self.AIR_SPEED_LED_ID,
+                "use_abs": False,
+                "track_previous": True,
+                "thresholds": [
+                    (lambda v: v > 70, self.COLOR["off"]),
+                    (lambda v: v >= 50, self.COLOR["green"]),
+                    (lambda v: v >= 40, self.COLOR["yellow"]),
+                    (lambda v: True, self.COLOR["red"]),
+                ],
+            },
 
-                "/controls/flight/flaps": {
-                    "led_id": self.FLAPS_LED_ID,
-                    "use_abs": False,
-                    "track_previous": False,
-                    "thresholds": [
-                        (lambda v: v > 0.9, "red"),
-                        (lambda v: v >= 0.5, "yellow"),
-                        (lambda v: v >= 0.1, "green"),
-                        (lambda v: True, "off"),
-                    ],
-                },
-            }
+            "/controls/flight/flaps": {
+                "led_id": self.FLAPS_LED_ID,
+                "use_abs": False,
+                "track_previous": False,
+                "thresholds": [
+                    (lambda v: v > 0.9, self.COLOR["red"]),
+                    (lambda v: v >= 0.5, self.COLOR["yellow"]),
+                    (lambda v: v >= 0.1, self.COLOR["green"]),
+                    (lambda v: True, self.COLOR["off"]),
+                ],
+            },
+        }
 
         # -------------------------------------------------------
         # PULLER (FG → MIDI LED) MAPPINGS
         # -------------------------------------------------------
-        # All pullers now use pull_generic() and the declarative PULLER_CONFIG table
         self.puller_mappings = [
-            ("/controls/flight/flaps", self.FLAPS_LED_ID, self.pull_generic),
-
+            ("/controls/flight/flaps", self.FLAPS_LED_ID, self.pull_generic_wrapper),
             ("/instrumentation/airspeed-indicator/indicated-speed-kt",
-             self.AIR_SPEED_LED_ID, self.pull_generic),
-
+             self.AIR_SPEED_LED_ID, self.pull_generic_wrapper),
             ("/orientation/roll-deg",
-             self.ROLL_DEG_ID, self.pull_generic),
+             self.ROLL_DEG_ID, self.pull_generic_wrapper),
         ]
 
 

@@ -1,24 +1,12 @@
-from .FlightgearMidiHelper import (
-    FlightgearMidi
-)
-
+from .FlightgearMidiHelper import FlightgearMidi
 from typing import Any, Iterable, Tuple, Callable, List
 
 # ---------------------------------------------------------------------------
 # CONFIG HELPERS
 # ---------------------------------------------------------------------------
 
-def add_mapping(
-    midi_input: FlightgearMidi.DataConfigMidiInput,
-    from_start: int,
-    from_end: int,
-    to_start: int,
-    to_end: int,
-    msg_type: int,
-    channel: int,
-    cc: int,
-    cmd: str,
-) -> None:
+def add_mapping(midi_input, from_start, from_end, to_start, to_end,
+                msg_type, channel, cc, cmd):
     m = FlightgearMidi.DataConfigFromMidiToTelnet()
     m.fromStart = from_start
     m.fromEnd = from_end
@@ -31,18 +19,12 @@ def add_mapping(
     midi_input.dataConfigFromMidiToTelnets.append(m)
 
 
-def add_mappings(
-    midi_input: FlightgearMidi.DataConfigMidiInput,
-    mappings: Iterable[Tuple[Any, ...]],
-) -> None:
+def add_mappings(midi_input, mappings):
     for args in mappings:
         add_mapping(midi_input, *args)
 
 
-def add_callback_mappings(
-    midi_input: FlightgearMidi.DataConfigMidiInput,
-    callback_mappings: Any,
-) -> None:
+def add_callback_mappings(midi_input, callback_mappings):
     for midiMsgType, notePitchOrCcChannel, callback in callback_mappings:
         itm = FlightgearMidi.DataConfigFromMidiToTelnet()
         itm.midiMsgType = midiMsgType
@@ -52,10 +34,7 @@ def add_callback_mappings(
         midi_input.dataConfigFromMidiToTelnets.append(itm)
 
 
-def add_pullers(
-    puller_list: list,
-    pullers: Iterable[Tuple[str, Any]],
-) -> None:
+def add_pullers(puller_list, pullers):
     for path, cb in pullers:
         p = FlightgearMidi.DataConfigPullerFgKey()
         p.fgKetPath = path
@@ -66,35 +45,23 @@ def add_pullers(
 # CALLBACK BUILDERS
 # ---------------------------------------------------------------------------
 
-def build_callback_mappings(
-    toggle_mappings: Iterable[Tuple[Any, Any, str]],
-    toggle_callback: Callable[[str, Any], None],
-) -> List[Tuple[Any, Any, Callable[[Any], None]]]:
+def build_callback_mappings(toggle_mappings, toggle_callback):
     result = []
-
     for midiMsgType, led_id, property_path in toggle_mappings:
 
         def cb(val, property_path=property_path):
             toggle_callback(property_path, val)
 
         result.append((midiMsgType, led_id, cb))
-
     return result
 
 
-def build_and_callback_mappings(
-    midi_input: FlightgearMidi.DataConfigMidiInput,
-    toggle_mappings: Iterable[Tuple[Any, Any, str]],
-    toggle_callback: Callable[[str, Any], None],
-) -> None:
+def build_and_callback_mappings(midi_input, toggle_mappings, toggle_callback):
     mappings = build_callback_mappings(toggle_mappings, toggle_callback)
     add_callback_mappings(midi_input, mappings)
 
 
-def build_pullers(
-    puller_mappings: Iterable[Tuple[str, int, Callable]],
-    pull_on_off_callback: Callable[[int, str, Any], None],
-):
+def build_pullers(puller_mappings, pull_on_off_callback):
     result = []
     for property_path, led_id, callback in puller_mappings:
 
@@ -105,49 +72,51 @@ def build_pullers(
                 callback(key, val)
 
         result.append((property_path, cb))
-
     return result
 
 
-def build_and_callback_pullers(
-    dataConfigPullerFgKeys: list,
-    puller_mappings: List[Tuple[str, int, Callable]],
-    toggle_mappings: Iterable[Tuple[Any, int, str]],
-    pull_on_off_callback: Callable[[int, str, Any], None],
-) -> None:
+def build_and_callback_pullers(dataConfigPullerFgKeys,
+                               puller_mappings,
+                               toggle_mappings,
+                               pull_on_off_callback):
+
     for _, led_id, property_path in toggle_mappings:
         puller_mappings.append((property_path, led_id, pull_on_off_callback))
 
     pullers = build_pullers(puller_mappings, pull_on_off_callback)
     add_pullers(dataConfigPullerFgKeys, pullers)
 
-def apply_midi_bindings(dataConfigPullerFgKeys: list,
-                        midi_input: FlightgearMidi.DataConfigMidiInput,
-                        on_off_toggle: Any,
+
+def apply_midi_bindings(dataConfigPullerFgKeys,
+                        midi_input,
+                        on_off_toggle,
                         pull_on_off,
                         mappings,
                         toggle_mappings,
-                        puller_mappings) -> None:
+                        puller_mappings):
 
-    # Standard CC mappings
     add_mappings(midi_input, mappings)
 
-    # Toggle buttons
     build_and_callback_mappings(
         midi_input,
         toggle_mappings,
         on_off_toggle
     )
 
-    # Pullers
     build_and_callback_pullers(
         dataConfigPullerFgKeys,
         puller_mappings,
         toggle_mappings,
-       pull_on_off,
+        pull_on_off,
     )
 
-def update_led(instance, raw_val, thresholds, led_id, use_abs=False, track_previous=True):
+# ---------------------------------------------------------------------------
+# PURE LED LOGIC
+# ---------------------------------------------------------------------------
+
+def update_led(midi_out, previous_colors, raw_val, thresholds,
+               led_id, use_abs=False, track_previous=True):
+
     try:
         val = float(raw_val)
         if use_abs:
@@ -155,27 +124,27 @@ def update_led(instance, raw_val, thresholds, led_id, use_abs=False, track_previ
     except ValueError:
         return
 
-    for cond, color_key in thresholds:
+    for cond, color in thresholds:
         if cond(val):
-            color = instance.COLOR[color_key]
             break
 
     if track_previous:
-        prev_color = instance.previous_colors.get(led_id)
+        prev_color = previous_colors.get(led_id)
         if color != prev_color:
-            instance.previous_colors[led_id] = color
-            instance.midi_out.sendNoteOn(0, led_id, color)
+            previous_colors[led_id] = color
+            midi_out.sendNoteOn(0, led_id, color)
     else:
-        instance.midi_out.sendNoteOn(0, led_id, color)
+        midi_out.sendNoteOn(0, led_id, color)
 
 
-def pull_generic(instance, key, val):
-    cfg = instance.puller_config.get(key)
+def pull_generic(midi_out, previous_colors, puller_config, key, val):
+    cfg = puller_config.get(key)
     if not cfg:
         return
 
     update_led(
-        instance,
+        midi_out,
+        previous_colors,
         raw_val=val,
         thresholds=cfg["thresholds"],
         led_id=cfg["led_id"],
