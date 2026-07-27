@@ -14,11 +14,11 @@ class LaunchControlXLAll:
     midi: Optional[Any] = None
     midi_out: Optional[Any] = None
 
-    previous_air_speed_color: Optional[int] = None
-    previous_roll_deg_color: Optional[int] = None
+    # Store previous LED colors by LED ID
+    previous_colors: Dict[int, Optional[int]] = field(default_factory=dict)
+
     toggle_states: Dict[str, bool] = field(default_factory=dict)
 
-    # Instance-level lists (class-level mutables are dangerous)
     mappings: List[Any] = field(default_factory=list)
     toggle_mappings: List[Any] = field(default_factory=list)
     puller_mappings: List[Any] = field(default_factory=list)
@@ -57,50 +57,98 @@ class LaunchControlXLAll:
     # -------------------------------------------------------
 
     def set_mappings(self) -> None:
-        """
-        Override this in subclasses.
-        """
         raise NotImplementedError("set_mappings() must be implemented in subclass")
+
+    # -------------------------------------------------------
+    # LED UPDATE HELPER
+    # -------------------------------------------------------
+
+    def _update_led(
+        self,
+        raw_val: str,
+        thresholds: list,
+        led_id: int,
+        use_abs: bool = False,
+        track_previous: bool = True,
+    ):
+        """
+        thresholds: list of (condition_fn, color_key)
+        led_id: MIDI LED ID
+        use_abs: apply abs() to the value before evaluating
+        track_previous: if False → always send LED update
+        """
+        try:
+            val = float(raw_val)
+            if use_abs:
+                val = abs(val)
+        except ValueError:
+            return
+
+        # pick first matching threshold
+        for cond, color_key in thresholds:
+            if cond(val):
+                color = self.COLOR[color_key]
+                break
+
+        if track_previous:
+            prev_color = self.previous_colors.get(led_id)
+            if color != prev_color:
+                self.previous_colors[led_id] = color
+                self.midi_out.sendNoteOn(0, led_id, color)
+        else:
+            # always send
+            self.midi_out.sendNoteOn(0, led_id, color)
 
     # -------------------------------------------------------
     # CALLBACKS
     # -------------------------------------------------------
 
     def pull_roll_deg(self, key: str, val: str) -> None:
-        try:
-            speed = abs(float(val)) 
-        except ValueError:
-            return
+        thresholds = [
+            (lambda v: v < 35, "off"),
+            (lambda v: v < 45, "yellow"),
+            (lambda v: True, "red"),
+        ]
 
-        if speed < 35:
-            color = self.COLOR["off"]
-        elif speed < 45:
-            color = self.COLOR["yellow"]
-        else:
-            color = self.COLOR["red"]
-
-        if color != self.previous_roll_deg_color:
-            self.previous_roll_deg_color = color
-            self.midi_out.sendNoteOn(0, self.ROLL_DEG_ID, color)
+        self._update_led(
+            raw_val=val,
+            thresholds=thresholds,
+            led_id=self.ROLL_DEG_ID,
+            use_abs=True,
+            track_previous=True,
+        )
 
     def pull_indicated_air_speed(self, key: str, val: str) -> None:
-        try:
-            speed = float(val)
-        except ValueError:
-            return
+        thresholds = [
+            (lambda v: v > 70, "off"),
+            (lambda v: v >= 50, "green"),
+            (lambda v: v >= 40, "yellow"),
+            (lambda v: True, "red"),
+        ]
 
-        if speed > 70:
-            color = self.COLOR["off"]
-        elif speed >= 50:
-            color = self.COLOR["green"]
-        elif speed >= 40:
-            color = self.COLOR["yellow"]
-        else:
-            color = self.COLOR["red"]
+        self._update_led(
+            raw_val=val,
+            thresholds=thresholds,
+            led_id=self.AIR_SPEED_LED_ID,
+            use_abs=False,
+            track_previous=True,
+        )
 
-        if color != self.previous_air_speed_color:
-            self.previous_air_speed_color = color
-            self.midi_out.sendNoteOn(0, self.AIR_SPEED_LED_ID, color)
+    def flaps_on(self, key: str, val: str) -> None:
+        thresholds = [
+            (lambda v: v > 0.9, "red"),
+            (lambda v: v >= 0.5, "yellow"),
+            (lambda v: v >= 0.1, "green"),
+            (lambda v: True, "off"),
+        ]
+
+        self._update_led(
+            raw_val=val,
+            thresholds=thresholds,
+            led_id=self.FLAPS_LED_ID,
+            use_abs=False,
+            track_previous=False,  # always send
+        )
 
     def pull_on_off(self, btn_id: int, key: str, val: str) -> None:
         v = val.strip().lower().replace('"', '')
@@ -117,23 +165,6 @@ class LaunchControlXLAll:
         new_state = not self.toggle_states.get(key, False)
         self.toggle_states[key] = new_state
         self.midi.sendTerminalRaw(f"set {key} {'true' if new_state else 'false'}")
-
-    def flaps_on(self, key: str, val: str) -> None:
-        try:
-            flap = float(val)
-        except ValueError:
-            return
-
-        if flap > 0.9:
-            color = self.COLOR["red"]
-        elif flap >= 0.5:
-            color = self.COLOR["yellow"]
-        elif flap >= 0.1:
-            color = self.COLOR["green"]
-        else:
-            color = self.COLOR["off"]
-
-        self.midi_out.sendNoteOn(0, self.FLAPS_LED_ID, color)
 
     # -------------------------------------------------------
     # CONFIG LOADING
