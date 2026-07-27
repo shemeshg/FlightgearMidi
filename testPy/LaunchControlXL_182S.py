@@ -53,6 +53,48 @@ class LaunchControlXL(LaunchControlXLAll):
         ]
 
         # -------------------------------------------------------
+        # DECLARATIVE PULLER TABLE (CLASS ATTRIBUTE!)
+        # -------------------------------------------------------
+
+        self.puller_config  = {
+                "/orientation/roll-deg": {
+                    "led_id": self.ROLL_DEG_ID,
+                    "use_abs": True,
+                    "track_previous": True,
+                    "thresholds": [
+                        (lambda v: v < 35, "off"),
+                        (lambda v: v < 45, "yellow"),
+                        (lambda v: True, "red"),
+                    ],
+                },
+
+                "/instrumentation/airspeed-indicator/indicated-speed-kt": {
+                    "led_id": self.AIR_SPEED_LED_ID,
+                    "use_abs": False,
+                    "track_previous": True,
+                    "thresholds": [
+                        (lambda v: v > 70, "off"),
+                        (lambda v: v >= 50, "green"),
+                        (lambda v: v >= 40, "yellow"),
+                        (lambda v: True, "red"),
+                    ],
+                },
+
+                "/controls/flight/flaps": {
+                    "led_id": self.FLAPS_LED_ID,
+                    "use_abs": False,
+                    "track_previous": False,
+                    "thresholds": [
+                        (lambda v: v > 0.9, "red"),
+                        (lambda v: v >= 0.5, "yellow"),
+                        (lambda v: v >= 0.1, "green"),
+                        (lambda v: True, "off"),
+                    ],
+                },
+            }
+
+
+        # -------------------------------------------------------
         # PULLER (FG → MIDI LED) MAPPINGS
         # -------------------------------------------------------
         # All pullers now use pull_generic() and the declarative PULLER_CONFIG table

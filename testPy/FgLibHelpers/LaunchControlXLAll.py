@@ -15,6 +15,9 @@ class LaunchControlXLAll:
     midi: Optional[Any] = None
     midi_out: Optional[Any] = None
 
+
+    
+
     # Store previous LED colors by LED ID
     previous_colors: Dict[int, Optional[int]] = field(default_factory=dict)
 
@@ -23,6 +26,7 @@ class LaunchControlXLAll:
     mappings: List[Any] = field(default_factory=list)
     toggle_mappings: List[Any] = field(default_factory=list)
     puller_mappings: List[Any] = field(default_factory=list)
+    puller_config: Optional[Any] = None
 
     # -------------------------------------------------------
     # CONSTANTS
@@ -53,46 +57,6 @@ class LaunchControlXLAll:
     LANDING_LIGHTS_LED_ID = 106
     TAXI_LIGHT_LED_ID = 107
 
-    # -------------------------------------------------------
-    # DECLARATIVE PULLER TABLE (CLASS ATTRIBUTE!)
-    # -------------------------------------------------------
-
-    PULLER_CONFIG = {
-        "/orientation/roll-deg": {
-            "led_id": ROLL_DEG_ID,
-            "use_abs": True,
-            "track_previous": True,
-            "thresholds": [
-                (lambda v: v < 35, "off"),
-                (lambda v: v < 45, "yellow"),
-                (lambda v: True, "red"),
-            ],
-        },
-
-        "/instrumentation/airspeed-indicator/indicated-speed-kt": {
-            "led_id": AIR_SPEED_LED_ID,
-            "use_abs": False,
-            "track_previous": True,
-            "thresholds": [
-                (lambda v: v > 70, "off"),
-                (lambda v: v >= 50, "green"),
-                (lambda v: v >= 40, "yellow"),
-                (lambda v: True, "red"),
-            ],
-        },
-
-        "/controls/flight/flaps": {
-            "led_id": FLAPS_LED_ID,
-            "use_abs": False,
-            "track_previous": False,
-            "thresholds": [
-                (lambda v: v > 0.9, "red"),
-                (lambda v: v >= 0.5, "yellow"),
-                (lambda v: v >= 0.1, "green"),
-                (lambda v: True, "off"),
-            ],
-        },
-    }
 
     # -------------------------------------------------------
     # ABSTRACT METHOD
@@ -138,7 +102,7 @@ class LaunchControlXLAll:
     # -------------------------------------------------------
 
     def pull_generic(self, key: str, val: str) -> None:
-        cfg = self.PULLER_CONFIG.get(key)
+        cfg = self.puller_config.get(key)
         if not cfg:
             return
 
