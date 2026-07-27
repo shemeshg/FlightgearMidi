@@ -55,14 +55,13 @@ class LaunchControlXL(LaunchControlXLAll):
         # -------------------------------------------------------
         # PULLER (FG → MIDI LED) MAPPINGS
         # -------------------------------------------------------
+        # All pullers now use pull_generic() and the declarative PULLER_CONFIG table
         self.puller_mappings = [
-            ("/controls/flight/flaps", self.FLAPS_LED_ID, self.flaps_on),
-
+            ("/controls/flight/flaps", self.FLAPS_LED_ID, self.pull_generic),
             ("/instrumentation/airspeed-indicator/indicated-speed-kt",
-             self.AIR_SPEED_LED_ID, self.pull_indicated_air_speed),
-
-             ("/orientation/roll-deg",
-                          self.ROLL_DEG_ID, self.pull_roll_deg),
+             self.AIR_SPEED_LED_ID, self.pull_generic),
+            ("/orientation/roll-deg",
+             self.ROLL_DEG_ID, self.pull_generic),
         ]
 
 

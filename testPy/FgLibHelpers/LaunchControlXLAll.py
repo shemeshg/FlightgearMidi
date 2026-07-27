@@ -5,6 +5,7 @@ import sys
 from .FlightgearMidiUtils import apply_midi_bindings
 from .FlightgearMidiHelper import FlightgearMidi, logger
 
+
 # ---------------------------------------------------------------------------
 # DEVICE CLASS
 # ---------------------------------------------------------------------------
@@ -53,6 +54,47 @@ class LaunchControlXLAll:
     TAXI_LIGHT_LED_ID = 107
 
     # -------------------------------------------------------
+    # DECLARATIVE PULLER TABLE (CLASS ATTRIBUTE!)
+    # -------------------------------------------------------
+
+    PULLER_CONFIG = {
+        "/orientation/roll-deg": {
+            "led_id": ROLL_DEG_ID,
+            "use_abs": True,
+            "track_previous": True,
+            "thresholds": [
+                (lambda v: v < 35, "off"),
+                (lambda v: v < 45, "yellow"),
+                (lambda v: True, "red"),
+            ],
+        },
+
+        "/instrumentation/airspeed-indicator/indicated-speed-kt": {
+            "led_id": AIR_SPEED_LED_ID,
+            "use_abs": False,
+            "track_previous": True,
+            "thresholds": [
+                (lambda v: v > 70, "off"),
+                (lambda v: v >= 50, "green"),
+                (lambda v: v >= 40, "yellow"),
+                (lambda v: True, "red"),
+            ],
+        },
+
+        "/controls/flight/flaps": {
+            "led_id": FLAPS_LED_ID,
+            "use_abs": False,
+            "track_previous": False,
+            "thresholds": [
+                (lambda v: v > 0.9, "red"),
+                (lambda v: v >= 0.5, "yellow"),
+                (lambda v: v >= 0.1, "green"),
+                (lambda v: True, "off"),
+            ],
+        },
+    }
+
+    # -------------------------------------------------------
     # ABSTRACT METHOD
     # -------------------------------------------------------
 
@@ -71,12 +113,6 @@ class LaunchControlXLAll:
         use_abs: bool = False,
         track_previous: bool = True,
     ):
-        """
-        thresholds: list of (condition_fn, color_key)
-        led_id: MIDI LED ID
-        use_abs: apply abs() to the value before evaluating
-        track_previous: if False → always send LED update
-        """
         try:
             val = float(raw_val)
             if use_abs:
@@ -84,7 +120,6 @@ class LaunchControlXLAll:
         except ValueError:
             return
 
-        # pick first matching threshold
         for cond, color_key in thresholds:
             if cond(val):
                 color = self.COLOR[color_key]
@@ -96,59 +131,28 @@ class LaunchControlXLAll:
                 self.previous_colors[led_id] = color
                 self.midi_out.sendNoteOn(0, led_id, color)
         else:
-            # always send
             self.midi_out.sendNoteOn(0, led_id, color)
 
     # -------------------------------------------------------
-    # CALLBACKS
+    # GENERIC PULLER
     # -------------------------------------------------------
 
-    def pull_roll_deg(self, key: str, val: str) -> None:
-        thresholds = [
-            (lambda v: v < 35, "off"),
-            (lambda v: v < 45, "yellow"),
-            (lambda v: True, "red"),
-        ]
+    def pull_generic(self, key: str, val: str) -> None:
+        cfg = self.PULLER_CONFIG.get(key)
+        if not cfg:
+            return
 
         self._update_led(
             raw_val=val,
-            thresholds=thresholds,
-            led_id=self.ROLL_DEG_ID,
-            use_abs=True,
-            track_previous=True,
+            thresholds=cfg["thresholds"],
+            led_id=cfg["led_id"],
+            use_abs=cfg["use_abs"],
+            track_previous=cfg["track_previous"],
         )
 
-    def pull_indicated_air_speed(self, key: str, val: str) -> None:
-        thresholds = [
-            (lambda v: v > 70, "off"),
-            (lambda v: v >= 50, "green"),
-            (lambda v: v >= 40, "yellow"),
-            (lambda v: True, "red"),
-        ]
-
-        self._update_led(
-            raw_val=val,
-            thresholds=thresholds,
-            led_id=self.AIR_SPEED_LED_ID,
-            use_abs=False,
-            track_previous=True,
-        )
-
-    def flaps_on(self, key: str, val: str) -> None:
-        thresholds = [
-            (lambda v: v > 0.9, "red"),
-            (lambda v: v >= 0.5, "yellow"),
-            (lambda v: v >= 0.1, "green"),
-            (lambda v: True, "off"),
-        ]
-
-        self._update_led(
-            raw_val=val,
-            thresholds=thresholds,
-            led_id=self.FLAPS_LED_ID,
-            use_abs=False,
-            track_previous=False,  # always send
-        )
+    # -------------------------------------------------------
+    # OTHER CALLBACKS
+    # -------------------------------------------------------
 
     def pull_on_off(self, btn_id: int, key: str, val: str) -> None:
         v = val.strip().lower().replace('"', '')
@@ -188,14 +192,11 @@ class LaunchControlXLAll:
 
         self.midi_out = self.midi.getLibreMidiOutPort("FlightgearIn", 0)
 
-        # Initialize LEDs
         for led in (self.FLAPS_LED_ID, self.AIR_SPEED_LED_ID):
             self.midi_out.sendNoteOn(0, led, self.COLOR["off"])
 
-        # Subclass must define mappings
         self.set_mappings()
 
-        # Apply bindings
         apply_midi_bindings(
             cfg.dataConfigPullerFgKeys,
             midi_input,

@@ -16,16 +16,25 @@ class LaunchControlXL(LaunchControlXLAll):
         # AXIS / CONTROL CHANGE MAPPINGS
         # -------------------------------------------------------
         self.mappings = [
+            # throttle
             (0, 127, 0, 1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 77,
-            "/controls/engines/engine[0]/throttle"),
+             "/controls/engines/engine[0]/throttle"),
+
+            # rudder
             (0, 127, 1, -1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 78,
-            "/controls/flight/rudder"),
+             "/controls/flight/rudder"),
+
+            # aileron
             (0, 127, 1, -1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 79,
-            "/controls/flight/aileron"),
+             "/controls/flight/aileron"),
+
+            # elevator
             (0, 127, -1, 1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 80,
-            "/controls/flight/elevator"),
+             "/controls/flight/elevator"),
+
+            # mixture
             (0, 127, 0, 1, FlightgearMidi.MidiMsgType.CONTROL_CHANGE, -1, 84,
-            "/controls/engines/current-engine/mixture"),
+             "/controls/engines/current-engine/mixture"),
         ]
 
         # -------------------------------------------------------
@@ -33,22 +42,27 @@ class LaunchControlXL(LaunchControlXLAll):
         # -------------------------------------------------------
         self.toggle_mappings = [
             (FlightgearMidi.MidiMsgType.NOTE_ON, self.CARB_HEAT_LED_ID,
-            "/controls/engines/current-engine/carb-heat"),
+             "/controls/engines/current-engine/carb-heat"),
+
             (FlightgearMidi.MidiMsgType.NOTE_ON, self.LANDING_LIGHTS_LED_ID,
-            "/controls/lighting/landing-lights"),
+             "/controls/lighting/landing-lights"),
+
             (FlightgearMidi.MidiMsgType.NOTE_ON, self.TAXI_LIGHT_LED_ID,
-            "/controls/lighting/taxi-light"),
+             "/controls/lighting/taxi-light"),
         ]
 
         # -------------------------------------------------------
         # PULLER (FG → MIDI LED) MAPPINGS
         # -------------------------------------------------------
+        # All pullers now use pull_generic() and the declarative PULLER_CONFIG table
         self.puller_mappings = [
-            ("/controls/flight/flaps", self.FLAPS_LED_ID, self.flaps_on),
+            ("/controls/flight/flaps", self.FLAPS_LED_ID, self.pull_generic),
+
             ("/instrumentation/airspeed-indicator/indicated-speed-kt",
-            self.AIR_SPEED_LED_ID, self.pull_indicated_air_speed),
+             self.AIR_SPEED_LED_ID, self.pull_generic),
+
             ("/orientation/roll-deg",
-                                self.ROLL_DEG_ID, self.pull_roll_deg),            
+             self.ROLL_DEG_ID, self.pull_generic),
         ]
 
 
