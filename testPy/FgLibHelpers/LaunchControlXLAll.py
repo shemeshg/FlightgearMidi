@@ -68,7 +68,7 @@ class LaunchControlXLAll:
 
     def pull_roll_deg(self, key: str, val: str) -> None:
         try:
-            speed = float(val)
+            speed = abs(float(val)) 
         except ValueError:
             return
 
