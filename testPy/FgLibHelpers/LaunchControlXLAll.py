@@ -4,6 +4,7 @@ import sys
 
 from .FlightgearMidiUtils import apply_midi_bindings
 from .FlightgearMidiHelper import FlightgearMidi, logger
+from .FlightgearMidiUtils import update_led, pull_generic as fg_pull_generic
 
 
 # ---------------------------------------------------------------------------
@@ -65,54 +66,10 @@ class LaunchControlXLAll:
     def set_mappings(self) -> None:
         raise NotImplementedError("set_mappings() must be implemented in subclass")
 
-    # -------------------------------------------------------
-    # LED UPDATE HELPER
-    # -------------------------------------------------------
-
-    def _update_led(
-        self,
-        raw_val: str,
-        thresholds: list,
-        led_id: int,
-        use_abs: bool = False,
-        track_previous: bool = True,
-    ):
-        try:
-            val = float(raw_val)
-            if use_abs:
-                val = abs(val)
-        except ValueError:
-            return
-
-        for cond, color_key in thresholds:
-            if cond(val):
-                color = self.COLOR[color_key]
-                break
-
-        if track_previous:
-            prev_color = self.previous_colors.get(led_id)
-            if color != prev_color:
-                self.previous_colors[led_id] = color
-                self.midi_out.sendNoteOn(0, led_id, color)
-        else:
-            self.midi_out.sendNoteOn(0, led_id, color)
-
-    # -------------------------------------------------------
-    # GENERIC PULLER
-    # -------------------------------------------------------
 
     def pull_generic(self, key: str, val: str) -> None:
-        cfg = self.puller_config.get(key)
-        if not cfg:
-            return
+        fg_pull_generic(self, key, val)
 
-        self._update_led(
-            raw_val=val,
-            thresholds=cfg["thresholds"],
-            led_id=cfg["led_id"],
-            use_abs=cfg["use_abs"],
-            track_previous=cfg["track_previous"],
-        )
 
     # -------------------------------------------------------
     # OTHER CALLBACKS

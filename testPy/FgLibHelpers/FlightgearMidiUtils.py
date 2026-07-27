@@ -146,3 +146,39 @@ def apply_midi_bindings(dataConfigPullerFgKeys: list,
         toggle_mappings,
        pull_on_off,
     )
+
+def update_led(instance, raw_val, thresholds, led_id, use_abs=False, track_previous=True):
+    try:
+        val = float(raw_val)
+        if use_abs:
+            val = abs(val)
+    except ValueError:
+        return
+
+    for cond, color_key in thresholds:
+        if cond(val):
+            color = instance.COLOR[color_key]
+            break
+
+    if track_previous:
+        prev_color = instance.previous_colors.get(led_id)
+        if color != prev_color:
+            instance.previous_colors[led_id] = color
+            instance.midi_out.sendNoteOn(0, led_id, color)
+    else:
+        instance.midi_out.sendNoteOn(0, led_id, color)
+
+
+def pull_generic(instance, key, val):
+    cfg = instance.puller_config.get(key)
+    if not cfg:
+        return
+
+    update_led(
+        instance,
+        raw_val=val,
+        thresholds=cfg["thresholds"],
+        led_id=cfg["led_id"],
+        use_abs=cfg["use_abs"],
+        track_previous=cfg["track_previous"],
+    )
