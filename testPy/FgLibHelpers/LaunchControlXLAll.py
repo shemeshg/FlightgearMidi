@@ -3,8 +3,10 @@ from typing import Any, Optional, Dict, List
 import sys
 
 from .FlightgearMidiUtils import apply_midi_bindings
-from .FlightgearMidiHelper import FlightgearMidi, logger
-from .FlightgearMidiUtils import pull_generic as fg_pull_generic
+from .FlightgearMidiHelper import FlightgearMidi
+
+
+from FgLibHelpers.FlightgearMidiUtils import pull_generic
 
 
 @dataclass
@@ -48,9 +50,9 @@ class LaunchControlXLAll:
     def set_mappings(self):
         raise NotImplementedError
 
-    def pull_generic(self, key, val):
-        fg_pull_generic(self.midi_out, self.previous_colors,
-                        self.puller_config, key, val)
+    def pull_generic_wrapper(self, key, val):
+        pull_generic(self.midi_out, self.previous_colors,
+                     self.puller_config, key, val)
 
     def pull_on_off(self, btn_id, key, val):
         v = val.strip().lower().replace('"', '')
