@@ -1,15 +1,13 @@
 from dataclasses import dataclass
 from FgLibHelpers.FlightgearMidiHelper import main_loop, FlightgearMidi
 from FgLibHelpers.LaunchControlXLAll import LaunchControlXLAll
-from FgLibHelpers.FlightgearMidiUtils import pull_generic
+
 
 
 @dataclass
 class LaunchControlXL(LaunchControlXLAll):
 
-    def pull_generic_wrapper(self, key, val):
-        pull_generic(self.midi_out, self.previous_colors,
-                     self.puller_config, key, val)
+
 
     def set_mappings(self):
 
