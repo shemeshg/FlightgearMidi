@@ -19,7 +19,10 @@ class LaunchControlXLAll:
 
     mappings: List[Any] = field(default_factory=list)
     toggle_mappings: List[Any] = field(default_factory=list)
+
+    # Example:  [("/controls/flight/flaps", self.FLAPS_LED_ID, self.pull_generic_wrapper),]
     puller_mappings: List[Any] = field(default_factory=list)
+
     puller_config: Optional[Any] = None
 
     COLOR = {
