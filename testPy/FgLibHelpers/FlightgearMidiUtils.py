@@ -61,15 +61,12 @@ def build_and_callback_mappings(midi_input, toggle_mappings, toggle_callback):
     add_callback_mappings(midi_input, mappings)
 
 
-def build_pullers(puller_mappings, pull_on_off_callback):
+def build_pullers(puller_mappings):
     result = []
-    for property_path, led_id, callback in puller_mappings:
+    for property_path, callback in puller_mappings:
 
-        def cb(key, val, callback=callback, led_id=led_id):
-            if callback is pull_on_off_callback:
-                callback(led_id, key, val)
-            else:
-                callback(key, val)
+        def cb(key, val, callback=callback):
+            callback(key, val)
 
         result.append((property_path, cb))
     return result
@@ -77,13 +74,22 @@ def build_pullers(puller_mappings, pull_on_off_callback):
 
 def build_and_callback_pullers(dataConfigPullerFgKeys,
                                puller_mappings,
+                               puller_config,
                                toggle_mappings,
-                               pull_on_off_callback):
+                               pull_on_off_callback,
+                               puller_callback):
+
+    for property_path in puller_config:
+        puller_mappings.append((property_path, puller_callback))
 
     for _, led_id, property_path in toggle_mappings:
-        puller_mappings.append((property_path, led_id, pull_on_off_callback))
+        puller_mappings.append(
+            (property_path,
+             lambda key, val, led_id=led_id, callback=pull_on_off_callback:
+             callback(led_id, key, val))
+        )
 
-    pullers = build_pullers(puller_mappings, pull_on_off_callback)
+    pullers = build_pullers(puller_mappings)
     add_pullers(dataConfigPullerFgKeys, pullers)
 
 
@@ -93,7 +99,9 @@ def apply_midi_bindings(dataConfigPullerFgKeys,
                         pull_on_off,
                         mappings,
                         toggle_mappings,
-                        puller_mappings):
+                        puller_mappings,
+                        puller_config,
+                        puller_callback):
 
     add_mappings(midi_input, mappings)
 
@@ -106,8 +114,10 @@ def apply_midi_bindings(dataConfigPullerFgKeys,
     build_and_callback_pullers(
         dataConfigPullerFgKeys,
         puller_mappings,
+        puller_config,
         toggle_mappings,
         pull_on_off,
+        puller_callback,
     )
 
 # ---------------------------------------------------------------------------

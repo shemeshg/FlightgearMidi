@@ -94,6 +94,8 @@ class LaunchControlXLAll:
             self.mappings,
             self.toggle_mappings,
             self.puller_mappings,
+            self.puller_config,
+            self.pull_generic_wrapper,
         )
 
         cfg.dataConfigMidiInputs.append(midi_input)

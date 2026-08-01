@@ -93,16 +93,6 @@ class LaunchControlXL(LaunchControlXLAll):
             },
         }
 
-        # -------------------------------------------------------
-        # PULLER (FG → MIDI LED) MAPPINGS
-        # -------------------------------------------------------
-        self.puller_mappings = [
-            ("/controls/flight/flaps", self.FLAPS_LED_ID, self.pull_generic_wrapper),
-            ("/instrumentation/airspeed-indicator/indicated-speed-kt",
-             self.AIR_SPEED_LED_ID, self.pull_generic_wrapper),
-            ("/orientation/roll-deg",
-             self.ROLL_DEG_ID, self.pull_generic_wrapper),
-        ]
 
 
 # ---------------------------------------------------------------------------
