@@ -212,3 +212,6 @@ midiOut.sendNoteOn(0, 73, 60)
 
 Build locally or install from Releases, write your mappings in Python, and let the C++ backend handle the real‑time work.
 
+## SBOM
+
+https://github.com/shemeshg/FlightgearMidi/blob/main/SBOM.md
