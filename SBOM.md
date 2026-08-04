@@ -164,8 +164,8 @@ FlightgearMidi
  ├── sigslot (MIT)
  ├── pybind11 (BSD-3-Clause)
  ├── scikit-build-core (MIT)
- ├── cpr (MIT)
- ├── nlohmann-json (MIT)
- └── meson (Apache-2.0)
+ └── cpr (MIT)
+     └── meson (Apache-2.0)
+ └── nlohmann-json (MIT) 
 ```
 
